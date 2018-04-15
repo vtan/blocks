@@ -1,4 +1,4 @@
-module Box.FpsCounter (new, withFps) where
+module App.FpsCounter (new, withFps) where
 
 import qualified SDL.Raw
 

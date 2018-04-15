@@ -1,6 +1,6 @@
 module Main where
 
-import qualified Box.FpsCounter as FpsCounter
+import qualified App.FpsCounter as FpsCounter
 import qualified Data.Text as Text
 import qualified SDL
 
