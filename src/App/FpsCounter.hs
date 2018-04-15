@@ -1,5 +1,7 @@
 module App.FpsCounter (new, withFps) where
 
+import App.Prelude
+
 import qualified SDL.Raw
 
 import Data.IORef
@@ -11,7 +13,7 @@ sampledFrameCount = 20
 data Counter = Counter
   { _frameCount :: IORef Int
   , _counterSum :: IORef Word64
-  , _counterFrequency :: !Word64
+  , _counterFrequency :: Word64
   }
 
 new :: IO Counter

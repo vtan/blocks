@@ -1,10 +1,14 @@
 module Main where
 
+import App.Prelude
+
 import qualified App.FpsCounter as FpsCounter
+import qualified App.GameState as GameState
+import qualified App.Render as Render
+import qualified App.Update as Update
 import qualified Data.Text as Text
 import qualified SDL
 
-import Data.Function (fix)
 import SDL (($=))
 import Text.Printf (printf)
 
@@ -15,14 +19,15 @@ main = do
   renderer <- SDL.createRenderer window (-1) $
     SDL.defaultRenderer { SDL.rendererType = SDL.AcceleratedVSyncRenderer }
   fpsCounter <- FpsCounter.new
-  fix $ \cont -> do
-    next <- FpsCounter.withFps fpsCounter $ \fps -> do
+  flip fix GameState.initial $ \cont gs -> do
+    gs' <- FpsCounter.withFps fpsCounter $ \fps -> do
       case fps of
         Just updated -> SDL.windowTitle window $= Text.pack (printf "FPS: %.2f" updated)
         Nothing -> pure ()
 
       events <- SDL.pollEvents
-      SDL.present renderer
-      pure $ null [() | SDL.Event { SDL.eventPayload = SDL.QuitEvent } <- events]
-    if next then cont else pure ()
+      let !gs' = Update.update events gs
+      Render.render renderer gs'
+      pure gs'
+    if (view #_quit gs') then pure () else cont gs'
   SDL.quit

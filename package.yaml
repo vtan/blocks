@@ -20,11 +20,28 @@ description:         Please see the README on Github at <https://github.com/gith
 
 dependencies:
   - base >= 4.7 && < 5
+  - containers
+  - generic-lens
+  - lens
+  - linear
   - sdl2
   - text
+  - unordered-containers
 
 default-extensions:
+  - DataKinds
+  - DeriveGeneric
+  - FlexibleInstances
+  - LambdaCase
+  - MultiParamTypeClasses
+  - NoImplicitPrelude
+  - OverloadedLabels
+  - OverloadedLists
   - OverloadedStrings
+  - ScopedTypeVariables
+  - StrictData
+  - TypeApplications
+  - TypeFamilies
 
 ghc-options:
   - -Wall
