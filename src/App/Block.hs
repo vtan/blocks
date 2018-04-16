@@ -13,6 +13,7 @@ data Block = Block
 data Behavior
   = Static
   | Movable { _direction :: V2 Int }
+  | Pushable
   deriving (Show, Generic)
 
 contains :: Block -> V2 Int -> Bool
