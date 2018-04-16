@@ -22,6 +22,6 @@ vectorToScreen (Camera scale _) p =
 
 initial :: Camera
 initial = Camera
-  { _translate = V2 256 256
-  , _scale = 64
+  { _translate = V2 64 64
+  , _scale = 48
   }

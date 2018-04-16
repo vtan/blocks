@@ -24,9 +24,7 @@ handleEvent gs = \case
       )
     } ->
     let clickTile = floor <$> Camera.screenToPoint (view #_camera gs) (fmap fromIntegral clickPos)
-        clickBlock = do
-          clickedBlockId <- view (#_blockIdByOrigin . at clickTile) gs
-          view (#_blockById . at clickedBlockId) gs
+        clickBlock = GameState.findBlockAt gs clickTile
      in maybe gs (flip blockClicked gs) clickBlock
   _ ->
     gs
@@ -39,7 +37,4 @@ blockClicked block gs =
       let blockId = view #_id block
           origin = view #_origin block
           origin' = origin + dir
-       in gs
-            & set (#_blockById . at blockId . _Just . #_origin) origin'
-            & set (#_blockIdByOrigin . at origin) Nothing
-            & set (#_blockIdByOrigin . at origin') (Just blockId)
+       in gs & set (#_blockById . at blockId . _Just . #_origin) origin'
