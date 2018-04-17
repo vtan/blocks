@@ -40,14 +40,15 @@ tryPush :: Block.Block -> V2 Int -> GameState.GameState -> Maybe GameState.GameS
 tryPush block dir gs =
   case view #_behavior block of
     Block.Static -> Nothing
-    Block.Movable _ -> pushedGs
-    Block.Pushable -> pushedGs
+    Block.Movable _ -> gs'
+    Block.Pushable -> gs'
   where
+    gs' = allBlocks
+      & toList
+      & filter (not . Block.eqId block)
+      & filter (Block.intersects movedBlock)
+      & foldlM (\gs'' b -> tryPush b dir gs'') gs
+      & fmap (set (#_blockById . at blockId . _Just) movedBlock)
+    allBlocks = gs & view #_blockById
     blockId = block & view #_id
-    newPos = (block & view #_origin) + dir
-    moveBlock = set (#_blockById . at blockId . _Just . #_origin) newPos
-    pushedGs = case GameState.findBlockAt gs newPos of
-      Just blockInWay ->
-        tryPush blockInWay dir gs <&> moveBlock
-      Nothing ->
-        Just $ moveBlock gs
+    movedBlock = block & over #_origin (+ dir)
