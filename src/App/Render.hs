@@ -3,12 +3,12 @@ module App.Render where
 import App.Prelude
 
 import qualified App.Camera as Camera
-import qualified App.GameState as GameState
 import qualified SDL as SDL
 
+import App.GameState (GameState)
 import SDL (($=))
 
-render :: SDL.Renderer -> GameState.GameState -> IO ()
+render :: SDL.Renderer -> GameState -> IO ()
 render renderer gs = do
   SDL.rendererDrawColor renderer $= V4 0 0 0 255
   SDL.clear renderer

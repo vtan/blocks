@@ -5,14 +5,17 @@ import App.Prelude
 import qualified App.Block as Block
 import qualified App.Camera as Camera
 
+import App.Block (Block)
+import App.Camera (Camera)
+
 data GameState = GameState
-  { _blockById :: IntMap Block.Block
-  , _camera :: Camera.Camera
+  { _blockById :: IntMap Block
+  , _camera :: Camera
   , _quit :: Bool
   }
   deriving (Show, Generic)
 
-findBlockAt :: GameState -> V2 Int -> Maybe Block.Block
+findBlockAt :: GameState -> V2 Int -> Maybe Block
 findBlockAt GameState{ _blockById = blocks } p =
   blocks & find (\b -> Block.contains b p)
 

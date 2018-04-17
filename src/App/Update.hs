@@ -7,10 +7,13 @@ import qualified App.Camera as Camera
 import qualified App.GameState as GameState
 import qualified SDL as SDL
 
-update :: [SDL.Event] -> GameState.GameState -> GameState.GameState
+import App.Block (Block)
+import App.GameState (GameState)
+
+update :: [SDL.Event] -> GameState -> GameState
 update events gs = foldl' handleEvent gs events
 
-handleEvent :: GameState.GameState -> SDL.Event -> GameState.GameState
+handleEvent :: GameState -> SDL.Event -> GameState
 handleEvent gs = \case
   SDL.Event { SDL.eventPayload = SDL.QuitEvent } ->
     set #_quit True gs
@@ -29,14 +32,14 @@ handleEvent gs = \case
   _ ->
     gs
 
-blockClicked :: Block.Block -> GameState.GameState -> GameState.GameState
+blockClicked :: Block -> GameState -> GameState
 blockClicked block gs =
   case view #_behavior block of
     Block.Static -> gs
     Block.Movable dir -> fromMaybe gs $ tryPush block dir gs
     Block.Pushable -> gs
 
-tryPush :: Block.Block -> V2 Int -> GameState.GameState -> Maybe GameState.GameState
+tryPush :: Block -> V2 Int -> GameState -> Maybe GameState
 tryPush block dir gs =
   case view #_behavior block of
     Block.Static -> Nothing
