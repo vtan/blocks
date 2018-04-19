@@ -4,6 +4,8 @@
 module App.Prelude (module X) where
 
 import Prelude as X
+import Control.Applicative as X
+import Control.Arrow as X
 import Control.Lens.Operators as X
 import Data.Foldable as X
 import Data.Function as X
@@ -11,6 +13,8 @@ import Data.Maybe as X
 
 import Control.Lens as X
   (view, set, over, at, _Just)
+import Control.Monad.Writer.CPS as X
+  (WriterT)
 import Data.Generics.Product as X
   (field)
 import Data.HashMap.Strict as X

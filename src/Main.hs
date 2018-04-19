@@ -27,7 +27,7 @@ main = do
       Nothing -> pure ()
 
     events <- SDL.pollEvents
-    let !gs' = Update.update events gs
+    let !gs' = Update.update (view #_lastFrameTime fpsCounter) events gs
 
     Render.render renderer gs'
 

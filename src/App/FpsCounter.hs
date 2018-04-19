@@ -14,6 +14,7 @@ data Counter = Counter
   , _frameCount :: Int
   , _counterSum :: Word64
   , _updatedFps :: Maybe Float
+  , _lastFrameTime :: Float
   }
   deriving (Show, Generic)
 
@@ -25,6 +26,7 @@ new = do
     , _frameCount = 0
     , _counterSum = 0
     , _updatedFps = Nothing
+    , _lastFrameTime = 0
     }
 
 record :: Counter -> Word64 -> Counter
@@ -33,6 +35,8 @@ record counter lastFrame =
     & over #_frameCount (+ 1)
     & over #_counterSum (+ lastFrame)
     & set #_updatedFps Nothing
+    -- TODO: Might as well store the sum in seconds too
+    & set #_lastFrameTime (fromIntegral lastFrame / fromIntegral (view #_counterFrequency counter))
     & updateIfNeeded
 
 updateIfNeeded :: Counter -> Counter

@@ -10,8 +10,18 @@ import App.Camera (Camera)
 
 data GameState = GameState
   { _blockById :: IntMap Block
+  , _currentAnimation :: Maybe Animation
   , _camera :: Camera
+  , _totalTime :: Float
   , _quit :: Bool
+  }
+  deriving (Show, Generic)
+
+data Animation = Animation
+  { _start :: Float
+  , _end :: Float
+  , _blockTargetsById :: IntMap (V2 Int)
+  , _after :: GameState
   }
   deriving (Show, Generic)
 
@@ -27,6 +37,8 @@ initial = GameState
     , (2, Block.Block 2 (V2 5 0) (V2 1 2) Block.Pushable)
     , (3, Block.Block 3 (V2 7 0) (V2 1 1) Block.Static)
     ]
+  , _currentAnimation = Nothing
   , _camera = Camera.initial
+  , _totalTime = 0
   , _quit = False
   }

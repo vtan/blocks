@@ -24,9 +24,11 @@ dependencies:
   - generic-lens
   - lens
   - linear
+  - mtl
   - sdl2
   - text
   - unordered-containers
+  - writer-cps-mtl
 
 default-extensions:
   - DataKinds
