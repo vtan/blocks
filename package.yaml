@@ -32,6 +32,7 @@ dependencies:
 
 default-extensions:
   - DataKinds
+  - DeriveFunctor
   - DeriveGeneric
   - FlexibleInstances
   - LambdaCase

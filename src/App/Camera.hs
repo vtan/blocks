@@ -2,25 +2,25 @@ module App.Camera where
 
 import App.Prelude
 
-data Camera = Camera
-  { _scale :: Int
-  , _translate :: V2 Int
+data Camera a = Camera
+  { _scale :: a
+  , _translate :: V2 a
   }
-  deriving (Show, Generic)
+  deriving (Show, Generic, Functor)
 
-screenToPoint :: Camera -> V2 Int -> V2 Double
+screenToPoint :: (Integral a, Fractional b) => Camera a -> V2 a -> V2 b
 screenToPoint (Camera scale translate) p =
   (fmap fromIntegral p - fmap fromIntegral translate) / fromIntegral scale
 
-pointToScreen :: Camera -> V2 Int -> V2 Int
+pointToScreen :: Num a => Camera a -> V2 a -> V2 a
 pointToScreen (Camera scale translate) p =
   scale *^ p + translate
 
-vectorToScreen :: Camera -> V2 Int -> V2 Int
+vectorToScreen :: Num a => Camera a -> V2 a -> V2 a
 vectorToScreen (Camera scale _) p =
   scale *^ p
 
-initial :: Camera
+initial :: Camera Int
 initial = Camera
   { _translate = V2 64 64
   , _scale = 48

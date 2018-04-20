@@ -21,6 +21,10 @@ import Data.HashMap.Strict as X
   (HashMap)
 import Data.IntMap.Strict as X
   (IntMap)
+import Data.Semigroup as X
+  ((<>))
+import Debug.Trace as X
+  (traceShowId)
 import GHC.Generics as X
   (Generic)
 import Linear as X

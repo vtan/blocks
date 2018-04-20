@@ -38,7 +38,8 @@ handleEvent gs = \case
         }
       )
     } ->
-    let clickTile = floor <$> Camera.screenToPoint (view #_camera gs) (fmap fromIntegral clickPos)
+    let clickTile = floor @Double <$>
+          Camera.screenToPoint (view #_camera gs) (fmap fromIntegral clickPos)
         clickBlock = GameState.findBlockAt gs clickTile
      in maybe gs (flip blockClicked gs) clickBlock
   _ ->
@@ -55,7 +56,7 @@ blockClicked block gs =
               anim = GameState.Animation
                 { GameState._start = time
                 -- TODO magic number
-                , GameState._end = time + 1
+                , GameState._end = time + 0.5
                 , GameState._blockTargetsById = targets
                 , GameState._after = gs'
                 }

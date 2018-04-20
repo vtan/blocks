@@ -11,7 +11,7 @@ import App.Camera (Camera)
 data GameState = GameState
   { _blockById :: IntMap Block
   , _currentAnimation :: Maybe Animation
-  , _camera :: Camera
+  , _camera :: Camera Int
   , _totalTime :: Float
   , _quit :: Bool
   }
