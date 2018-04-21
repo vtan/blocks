@@ -51,16 +51,9 @@ blockClicked block gs =
     Block.Static -> gs
     Block.Movable dir ->
       case Writer.runWriterT (tryPush block dir gs) of
-        Just (gs', targets) ->
-          let time = view #_totalTime gs
-              anim = GameState.Animation
-                { GameState._start = time
-                -- TODO magic number
-                , GameState._end = time + 0.5
-                , GameState._blockTargetsById = targets
-                , GameState._after = gs'
-                }
-           in gs & set #_currentAnimation (Just anim)
+        Just (gs', moves) ->
+          let anim = animateMoves gs gs' moves
+          in gs & set #_currentAnimation (Just anim)
         Nothing -> gs
     Block.Pushable -> gs
 
@@ -82,3 +75,19 @@ tryPush block dir gs =
     blockId = block & view #_id
     movedBlock = block & over #_origin (+ dir)
     collect w x = x <* Writer.tell w
+
+animateMoves :: GameState -> GameState -> IntMap (V2 Int) -> GameState.Animation
+animateMoves gs gs' moves =
+  GameState.Animation
+    { GameState._start = time
+    -- TODO magic number
+    , GameState._end = time + 0.2
+    , GameState._movingBlocksById = movingBlocks
+    , GameState._otherBlocksById = otherBlocks
+    , GameState._after = gs'
+    }
+  where
+    blocks = view #_blockById gs
+    time = view #_totalTime gs
+    movingBlocks = toList $ IntMap.intersectionWith (,) blocks moves
+    otherBlocks = toList $ IntMap.difference blocks moves

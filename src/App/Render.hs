@@ -3,7 +3,6 @@ module App.Render where
 import App.Prelude
 
 import qualified App.Camera as Camera
-import qualified Data.IntMap.Strict as IntMap
 import qualified SDL as SDL
 
 import App.Block (Block)
@@ -29,9 +28,8 @@ calculateStaticRects gs =
   map (fmap fromIntegral . calculateBlockRect camera) blocks
   where
     camera = view #_camera gs
-    blocks = toList $ IntMap.difference
-      (view #_blockById gs)
-      (view (#_currentAnimation . _Just . #_blockTargetsById) gs)
+    blocks = view #_currentAnimation gs
+      & maybe (toList $ view #_blockById gs) (view #_otherBlocksById)
 
 calculateAnimatedRects :: Integral a => GameState -> [SDL.Rectangle a]
 calculateAnimatedRects gs =
@@ -39,9 +37,8 @@ calculateAnimatedRects gs =
     Just anim ->
       let start = view #_start anim
           end = view #_end anim
-          targets = view #_blockTargetsById anim
           t = (end - view #_totalTime gs) / (end - start)
-      in IntMap.intersectionWith (,) (view #_blockById gs) targets
+      in view #_movingBlocksById anim
         & toList
         & map (\(block, tgt) ->
             -- TODO use fmap or <$> consistently

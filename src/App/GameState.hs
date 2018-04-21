@@ -20,7 +20,8 @@ data GameState = GameState
 data Animation = Animation
   { _start :: Float
   , _end :: Float
-  , _blockTargetsById :: IntMap (V2 Int)
+  , _movingBlocksById :: [(Block, V2 Int)]
+  , _otherBlocksById :: [Block]
   , _after :: GameState
   }
   deriving (Show, Generic)
