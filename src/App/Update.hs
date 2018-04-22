@@ -1,4 +1,6 @@
-module App.Update where
+module App.Update 
+  ( update )
+where
 
 import App.Prelude
 

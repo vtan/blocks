@@ -1,4 +1,6 @@
-module App.Render where
+module App.Render
+  ( render )
+where
 
 import App.Prelude
 
