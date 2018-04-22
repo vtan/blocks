@@ -12,7 +12,7 @@ import Data.Function as X
 import Data.Maybe as X
 
 import Control.Lens as X
-  (view, set, over, at, _Just)
+  (view, set, over, has, at, _Just, _Nothing)
 import Control.Monad.Writer.CPS as X
   (WriterT)
 import Data.Generics.Product as X

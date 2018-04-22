@@ -12,18 +12,22 @@ import qualified SDL as SDL
 import App.Block (Block)
 import App.GameState (GameState)
 
+animationLength :: Float
+animationLength = 0.2
+
 update :: Float -> [SDL.Event] -> GameState -> GameState
 update lastFrameTime events =
   over #_totalTime (+ lastFrameTime)
-  >>> \gs ->
-  -- TODO skip only mouse handling when animating
-    let cont = \gs' -> foldl' handleEvent gs' events
-     in case view #_currentAnimation gs of
-          Just anim ->
-            if view #_end anim < view #_totalTime gs
-            then cont (view #_after anim & set #_currentAnimation Nothing)
-            else gs
-          Nothing -> cont gs
+  >>> updateAnimation
+  >>> (\gs -> foldl' handleEvent gs events)
+
+updateAnimation :: GameState -> GameState
+updateAnimation gs =
+  view #_currentAnimation gs & maybe gs (\anim ->
+    if view #_end anim < view #_totalTime gs
+    then view #_after anim
+    else gs
+  )
 
 handleEvent :: GameState -> SDL.Event -> GameState
 handleEvent gs = \case
@@ -37,7 +41,7 @@ handleEvent gs = \case
         , SDL.mouseButtonEventPos = SDL.P (clickPos)
         }
       )
-    } ->
+    } | gs & has (#_currentAnimation . _Nothing) ->
     let clickTile = floor @Double <$>
           Camera.screenToPoint (view #_camera gs) (fmap fromIntegral clickPos)
         clickBlock = GameState.findBlockAt gs clickTile
@@ -80,8 +84,7 @@ animateMoves :: GameState -> GameState -> IntMap (V2 Int) -> GameState.Animation
 animateMoves gs gs' moves =
   GameState.Animation
     { GameState._start = time
-    -- TODO magic number
-    , GameState._end = time + 0.2
+    , GameState._end = time + animationLength
     , GameState._movingBlocksById = movingBlocks
     , GameState._otherBlocksById = otherBlocks
     , GameState._after = gs'
