@@ -55,19 +55,30 @@ blockClicked :: Block -> GameState -> GameState
 blockClicked block gs =
   case view #_behavior block of
     Block.Static -> gs
-    Block.Movable dir ->
-      case Writer.runWriterT (tryPush block dir gs) of
-        Just (gs', moves) ->
-          let anim = animateMoves gs gs' moves
-          in gs & set #_currentAnimation (Just anim)
-        Nothing -> gs
+    Block.Movable dir -> gs & moveBlock block dir
+    Block.Flippable normalDir flipped ->
+      let blockId = view #_id block
+          block' = block & set #_behavior (Block.Flippable normalDir (not flipped))
+          dir = normalDir & if flipped then negate else id
+      in gs
+        & set (#_blockById . at blockId . _Just) block'
+        & moveBlock block' dir
     Block.Pushable -> gs
+
+moveBlock :: Block -> V2 Int -> GameState -> GameState
+moveBlock block dir gs =
+  case Writer.runWriterT (tryPush block dir gs) of
+    Just (gs', moves) ->
+      let anim = animateMoves gs gs' moves
+      in gs & set #_currentAnimation (Just anim)
+    Nothing -> gs
 
 tryPush :: Block -> V2 Int -> GameState -> WriterT (IntMap (V2 Int)) Maybe GameState
 tryPush block dir gs =
   case view #_behavior block of
     Block.Static -> empty
-    Block.Movable _ -> gs'
+    Block.Movable{} -> gs'
+    Block.Flippable{} -> gs'
     Block.Pushable -> gs'
   where
     gs' = allBlocks

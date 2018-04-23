@@ -33,7 +33,7 @@ findBlockAt GameState{ _blockById = blocks } p =
 initial :: GameState
 initial = GameState
   { _blockById =
-    [ (0, Block.Block 0 (V2 0 0) (V2 1 1) (Block.Movable (V2 1 0)))
+    [ (0, Block.Block 0 (V2 4 0) (V2 1 1) (Block.Flippable (V2 1 0) False))
     , (1, Block.Block 1 (V2 6 1) (V2 1 1) Block.Pushable)
     , (2, Block.Block 2 (V2 5 0) (V2 1 2) Block.Pushable)
     , (3, Block.Block 3 (V2 7 0) (V2 1 1) Block.Static)

@@ -13,6 +13,7 @@ data Block = Block
 data Behavior
   = Static
   | Movable { _direction :: V2 Int }
+  | Flippable { _direction :: V2 Int, _flipped :: Bool }
   | Pushable
   deriving (Show, Generic)
 
