@@ -2,6 +2,8 @@ module App.Camera where
 
 import App.Prelude
 
+import App.Rect (Rect(..))
+
 data Camera a = Camera
   { _scale :: a
   , _translate :: V2 a
@@ -19,6 +21,10 @@ pointToScreen (Camera scale translate) p =
 vectorToScreen :: Num a => Camera a -> V2 a -> V2 a
 vectorToScreen (Camera scale _) p =
   scale *^ p
+
+rectToScreen :: Num a => Camera a -> Rect a -> Rect a
+rectToScreen cam (Rect xy wh) =
+  Rect (pointToScreen cam xy) (vectorToScreen cam wh)
 
 initial :: Camera Int
 initial = Camera

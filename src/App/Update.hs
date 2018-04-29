@@ -59,11 +59,11 @@ blockClicked block gs =
     Block.Movable dir -> gs & moveBlock block dir
     Block.Flippable normalDir flipped ->
       let blockId = view #_id block
-          block' = block & set #_behavior (Block.Flippable normalDir (not flipped))
           dir = normalDir & if flipped then negate else id
       in gs
-        & set (#_blockById . at blockId . _Just) block'
-        & moveBlock block' dir
+        & moveBlock block dir
+        & set (#_currentAnimation . _Just . #_after . #_blockById . at blockId . _Just . #_behavior)
+            (Block.Flippable normalDir (not flipped))
     Block.Pushable -> gs
 
 moveBlock :: Block -> V2 Int -> GameState -> GameState
@@ -82,13 +82,16 @@ tryPush block dir gs =
     Block.Flippable{} -> gs'
     Block.Pushable -> gs'
   where
-    gs' = allBlocks
-      & toList
-      & filter (not . Block.eqId block)
-      & filter (view #_rect >>> Rect.intersects movedRect)
-      & foldlM (\gs'' b -> tryPush b dir gs'') gs
-      & fmap (set (#_blockById . at blockId . _Just) movedBlock)
-      & collect (IntMap.singleton blockId $ view #_xy movedRect)
+    gs'
+      | Rect.containsRect (view #_levelBounds gs) movedRect =
+        allBlocks
+        & toList
+        & filter (not . Block.eqId block)
+        & filter (view #_rect >>> Rect.intersects movedRect)
+        & foldlM (\gs'' b -> tryPush b dir gs'') gs
+        & fmap (set (#_blockById . at blockId . _Just) movedBlock)
+        & collect (IntMap.singleton blockId $ view #_xy movedRect)
+      | otherwise = empty
     allBlocks = gs & view #_blockById
     blockId = block & view #_id
     movedRect = block & view #_rect & over #_xy (+ dir)

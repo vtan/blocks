@@ -5,6 +5,7 @@ where
 import App.Prelude
 
 import qualified App.Camera as Camera
+import qualified App.Rect as Rect
 import qualified SDL as SDL
 
 import App.Block (Block)
@@ -24,6 +25,10 @@ render renderer gs = do
     SDL.fillRect renderer $ Just rect
     SDL.rendererDrawColor renderer $= V4 63 63 63 255
     SDL.drawRect renderer $ Just rect
+  SDL.rendererDrawColor renderer $= V4 191 191 191 255
+  let camera = view #_camera gs
+      levelBounds = view #_levelBounds gs
+  SDL.drawRect renderer . Just . Rect.toSdl . Camera.rectToScreen camera $ levelBounds
   SDL.present renderer
 
 calculateStaticRects :: Integral a => GameState -> [SDL.Rectangle a]

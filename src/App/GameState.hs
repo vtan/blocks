@@ -12,6 +12,7 @@ import App.Rect (Rect(..))
 
 data GameState = GameState
   { _blockById :: IntMap Block
+  , _levelBounds :: Rect Int
   , _currentAnimation :: Maybe Animation
   , _camera :: Camera Int
   , _totalTime :: Float
@@ -40,6 +41,7 @@ initial = GameState
     , (2, Block 2 (Rect (V2 5 0) (V2 1 2)) Block.Pushable)
     , (3, Block 3 (Rect (V2 7 0) (V2 1 1)) Block.Static)
     ]
+  , _levelBounds = Rect (V2 3 (-1)) (V2 6 4)
   , _currentAnimation = Nothing
   , _camera = Camera.initial
   , _totalTime = 0
