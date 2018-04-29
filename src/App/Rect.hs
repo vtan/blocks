@@ -4,7 +4,6 @@ import App.Prelude
 
 import qualified SDL
 
-import Foreign.C.Types (CInt)
 import Linear.Affine (Point(P))
 
 data Rect a = Rect

@@ -25,6 +25,8 @@ import Data.Semigroup as X
   ((<>))
 import Debug.Trace as X
   (traceShowId)
+import Foreign.C.Types as X
+  (CInt)
 import GHC.Generics as X
   (Generic)
 import Linear as X

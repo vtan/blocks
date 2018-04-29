@@ -8,10 +8,7 @@ import qualified App.Camera as Camera
 import qualified App.Rect as Rect
 import qualified SDL as SDL
 
-import App.Block (Block)
-import App.Camera (Camera)
 import App.GameState (GameState)
-import App.Rect (Rect(..))
 import Linear (lerp)
 import SDL (($=))
 
@@ -31,15 +28,15 @@ render renderer gs = do
   SDL.drawRect renderer . Just . Rect.toSdl . Camera.rectToScreen camera $ levelBounds
   SDL.present renderer
 
-calculateStaticRects :: Integral a => GameState -> [SDL.Rectangle a]
+calculateStaticRects :: GameState -> [SDL.Rectangle CInt]
 calculateStaticRects gs =
-  map (fmap fromIntegral . calculateBlockRect camera) blocks
+  map (Rect.toSdl . Camera.rectToScreen camera . view #_rect) blocks
   where
     camera = view #_camera gs
     blocks = view #_currentAnimation gs
       & maybe (toList $ view #_blockById gs) (view #_otherBlocksById)
 
-calculateAnimatedRects :: Integral a => GameState -> [SDL.Rectangle a]
+calculateAnimatedRects :: GameState -> [SDL.Rectangle CInt]
 calculateAnimatedRects gs =
   case view #_currentAnimation gs of
     Just anim ->
@@ -49,23 +46,12 @@ calculateAnimatedRects gs =
       in view #_movingBlocksById anim
         & toList
         & map (\(block, tgt) ->
-            -- TODO use fmap or <$> consistently
-            let src = view (#_rect . #_xy) block
-                origin = round <$> Camera.pointToScreen camera'
-                  (lerp t (fromIntegral <$> src) (fromIntegral <$> tgt))
-                extent = Camera.vectorToScreen camera $ view (#_rect . #_wh) block
-            in fromIntegral <$> SDL.Rectangle (SDL.P origin) extent
+            let camera = fromIntegral <$> view #_camera gs
+            in view #_rect block
+              & fmap fromIntegral
+              & over #_xy (\src -> lerp t src (fromIntegral <$> tgt))
+              & Camera.rectToScreen camera
+              & fmap round
+              & Rect.toSdl @CInt
           )
     Nothing -> []
-  where
-    camera = view #_camera gs
-    camera' = fmap fromIntegral camera
-
--- TODO abstract rect?
-calculateBlockRect :: Num a => Camera a -> Block -> SDL.Rectangle a
-calculateBlockRect camera block =
-  SDL.Rectangle (SDL.P origin) extent
-  where
-    Rect xy wh = view #_rect block
-    origin = Camera.pointToScreen camera $ fmap fromIntegral xy
-    extent = Camera.vectorToScreen camera $ fmap fromIntegral wh
