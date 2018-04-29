@@ -4,9 +4,11 @@ import App.Prelude
 
 import qualified App.Block as Block
 import qualified App.Camera as Camera
+import qualified App.Rect as Rect
 
-import App.Block (Block)
+import App.Block (Block(..))
 import App.Camera (Camera)
+import App.Rect (Rect(..))
 
 data GameState = GameState
   { _blockById :: IntMap Block
@@ -28,15 +30,15 @@ data Animation = Animation
 
 findBlockAt :: GameState -> V2 Int -> Maybe Block
 findBlockAt GameState{ _blockById = blocks } p =
-  blocks & find (\b -> Block.contains b p)
+  blocks & find (\b -> Rect.contains (view #_rect b) p)
 
 initial :: GameState
 initial = GameState
   { _blockById =
-    [ (0, Block.Block 0 (V2 4 0) (V2 1 1) (Block.Flippable (V2 1 0) False))
-    , (1, Block.Block 1 (V2 6 1) (V2 1 1) Block.Pushable)
-    , (2, Block.Block 2 (V2 5 0) (V2 1 2) Block.Pushable)
-    , (3, Block.Block 3 (V2 7 0) (V2 1 1) Block.Static)
+    [ (0, Block 0 (Rect (V2 4 0) (V2 1 1)) (Block.Flippable (V2 1 0) False))
+    , (1, Block 1 (Rect (V2 6 1) (V2 1 1)) Block.Pushable)
+    , (2, Block 2 (Rect (V2 5 0) (V2 1 2)) Block.Pushable)
+    , (3, Block 3 (Rect (V2 7 0) (V2 1 1)) Block.Static)
     ]
   , _currentAnimation = Nothing
   , _camera = Camera.initial

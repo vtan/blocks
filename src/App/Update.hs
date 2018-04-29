@@ -7,6 +7,7 @@ import App.Prelude
 import qualified App.Block as Block
 import qualified App.Camera as Camera
 import qualified App.GameState as GameState
+import qualified App.Rect as Rect
 import qualified Control.Monad.Writer.CPS as Writer
 import qualified Data.IntMap.Strict as IntMap
 import qualified SDL as SDL
@@ -84,13 +85,14 @@ tryPush block dir gs =
     gs' = allBlocks
       & toList
       & filter (not . Block.eqId block)
-      & filter (Block.intersects movedBlock)
+      & filter (view #_rect >>> Rect.intersects movedRect)
       & foldlM (\gs'' b -> tryPush b dir gs'') gs
       & fmap (set (#_blockById . at blockId . _Just) movedBlock)
-      & collect (IntMap.singleton blockId $ view #_origin movedBlock)
+      & collect (IntMap.singleton blockId $ view #_xy movedRect)
     allBlocks = gs & view #_blockById
     blockId = block & view #_id
-    movedBlock = block & over #_origin (+ dir)
+    movedRect = block & view #_rect & over #_xy (+ dir)
+    movedBlock = block & set #_rect movedRect
     collect w x = x <* Writer.tell w
 
 animateMoves :: GameState -> GameState -> IntMap (V2 Int) -> GameState.Animation

@@ -10,6 +10,7 @@ import qualified SDL as SDL
 import App.Block (Block)
 import App.Camera (Camera)
 import App.GameState (GameState)
+import App.Rect (Rect(..))
 import Linear (lerp)
 import SDL (($=))
 
@@ -44,10 +45,10 @@ calculateAnimatedRects gs =
         & toList
         & map (\(block, tgt) ->
             -- TODO use fmap or <$> consistently
-            let src = view #_origin block
+            let src = view (#_rect . #_xy) block
                 origin = round <$> Camera.pointToScreen camera'
                   (lerp t (fromIntegral <$> src) (fromIntegral <$> tgt))
-                extent = Camera.vectorToScreen camera $ view #_extent block
+                extent = Camera.vectorToScreen camera $ view (#_rect . #_wh) block
             in fromIntegral <$> SDL.Rectangle (SDL.P origin) extent
           )
     Nothing -> []
@@ -60,5 +61,6 @@ calculateBlockRect :: Num a => Camera a -> Block -> SDL.Rectangle a
 calculateBlockRect camera block =
   SDL.Rectangle (SDL.P origin) extent
   where
-    origin = Camera.pointToScreen camera . fmap fromIntegral $ view #_origin block
-    extent = Camera.vectorToScreen camera . fmap fromIntegral $ view #_extent block
+    Rect xy wh = view #_rect block
+    origin = Camera.pointToScreen camera $ fmap fromIntegral xy
+    extent = Camera.vectorToScreen camera $ fmap fromIntegral wh
