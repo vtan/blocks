@@ -4,12 +4,12 @@ import App.Prelude
 
 import App.Rect (Rect)
 
-data Block = Block
+data Block a = Block
   { _id :: Int
-  , _rect :: Rect Int
+  , _rect :: Rect a
   , _behavior :: Behavior
   }
-  deriving (Show, Generic)
+  deriving (Show, Generic, Functor)
 
 data Behavior
   = Static
@@ -18,5 +18,5 @@ data Behavior
   | Pushable
   deriving (Show, Generic)
 
-eqId :: Block -> Block -> Bool
+eqId :: Block a -> Block a -> Bool
 eqId = (==) `on` view #_id

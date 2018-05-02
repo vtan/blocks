@@ -52,7 +52,7 @@ handleEvent gs = \case
   _ ->
     gs
 
-blockClicked :: Block -> GameState -> GameState
+blockClicked :: Block Int -> GameState -> GameState
 blockClicked block gs =
   case view #_behavior block of
     Block.Static -> gs
@@ -66,7 +66,7 @@ blockClicked block gs =
             (Block.Flippable normalDir (not flipped))
     Block.Pushable -> gs
 
-moveBlock :: Block -> V2 Int -> GameState -> GameState
+moveBlock :: Block Int -> V2 Int -> GameState -> GameState
 moveBlock block dir gs =
   case Writer.runWriterT (tryPush block dir gs) of
     Just (gs', moves) ->
@@ -74,7 +74,7 @@ moveBlock block dir gs =
       in gs & set #_currentAnimation (Just anim)
     Nothing -> gs
 
-tryPush :: Block -> V2 Int -> GameState -> WriterT (IntMap (V2 Int)) Maybe GameState
+tryPush :: Block Int -> V2 Int -> GameState -> WriterT (IntMap (V2 Int)) Maybe GameState
 tryPush block dir gs =
   case view #_behavior block of
     Block.Static -> empty

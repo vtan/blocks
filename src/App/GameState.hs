@@ -11,7 +11,7 @@ import App.Camera (Camera)
 import App.Rect (Rect(..))
 
 data GameState = GameState
-  { _blockById :: IntMap Block
+  { _blockById :: IntMap (Block Int)
   , _levelBounds :: Rect Int
   , _currentAnimation :: Maybe Animation
   , _camera :: Camera Int
@@ -23,13 +23,13 @@ data GameState = GameState
 data Animation = Animation
   { _start :: Float
   , _end :: Float
-  , _movingBlocksById :: [(Block, V2 Int)]
-  , _otherBlocksById :: [Block]
+  , _movingBlocksById :: [(Block Int, V2 Int)]
+  , _otherBlocksById :: [Block Int]
   , _after :: GameState
   }
   deriving (Show, Generic)
 
-findBlockAt :: GameState -> V2 Int -> Maybe Block
+findBlockAt :: GameState -> V2 Int -> Maybe (Block Int)
 findBlockAt GameState{ _blockById = blocks } p =
   blocks & find (\b -> Rect.contains (view #_rect b) p)
 
