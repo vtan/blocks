@@ -49,6 +49,17 @@ handleEvent gs = \case
           Camera.screenToPoint (view #_camera gs) (fmap fromIntegral clickPos)
         clickBlock = GameState.findBlockAt gs clickTile
      in maybe gs (flip blockClicked gs) clickBlock
+  SDL.Event 
+    { SDL.eventPayload = SDL.KeyboardEvent 
+      ( SDL.KeyboardEventData
+        { SDL.keyboardEventKeyMotion = SDL.Pressed
+        , SDL.keyboardEventKeysym = SDL.Keysym { SDL.keysymScancode = SDL.ScancodeR }
+        }
+      )
+    } ->
+    gs
+      & set #_blockById (view (#_currentLevel . #_blockById) gs)
+      & set #_currentAnimation Nothing
   _ ->
     gs
 
@@ -83,7 +94,7 @@ tryPush block dir gs =
     Block.Pushable -> gs'
   where
     gs'
-      | Rect.containsRect (view #_levelBounds gs) movedRect =
+      | Rect.containsRect (view (#_currentLevel . #_bounds) gs) movedRect =
         allBlocks
         & toList
         & filter (not . Block.eqId block)

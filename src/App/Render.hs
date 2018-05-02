@@ -46,7 +46,7 @@ render renderer gs = do
       Block.Static -> pure ()
       Block.Pushable -> pure ()
   SDL.rendererDrawColor renderer $= V4 191 191 191 255
-  let levelBounds = fromIntegral <$> view #_levelBounds gs
+  let levelBounds = fromIntegral <$> view (#_currentLevel . #_bounds) gs
   SDL.drawRect renderer . Just . drawnRect camera $ levelBounds
   SDL.present renderer
 
