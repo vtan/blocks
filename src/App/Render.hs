@@ -21,24 +21,23 @@ render renderer gs = do
   SDL.rendererDrawColor renderer $= V4 0 0 0 255
   SDL.clear renderer
   let blocks = (staticBlocks <> animatedBlocks) gs
-      camera = view #_camera gs
-      camera' = fromIntegral <$> camera
+      camera = fromIntegral <$> view #_camera gs
   for_ blocks $ \block -> do
     let rect = view #_rect block
-        scrRect = drawnRect camera' rect
+        scrRect = drawnRect camera rect
     SDL.rendererDrawColor renderer $= V4 127 127 127 255
     SDL.fillRect renderer $ Just scrRect
     SDL.rendererDrawColor renderer $= V4 63 63 63 255
     SDL.drawRect renderer $ Just scrRect
     case view #_behavior block of
       Block.Movable { Block._direction = (fmap fromIntegral -> dir) } -> do
-        let scrMarkerRect = drawnRect camera' $ sideMarkerRect rect dir
+        let scrMarkerRect = drawnRect camera $ sideMarkerRect rect dir
         SDL.rendererDrawColor renderer $= V4 0 255 0 255
         SDL.fillRect renderer $ Just scrMarkerRect
       Block.Flippable { Block._direction = (fmap fromIntegral -> dir), Block._flipped = flipped } -> do
-        let scrCurrentMarkerRect = drawnRect camera'
+        let scrCurrentMarkerRect = drawnRect camera
               $ sideMarkerRect rect (dir & if flipped then negate else id)
-            scrOtherMarkerRect = drawnRect camera'
+            scrOtherMarkerRect = drawnRect camera
               $ sideMarkerRect rect (dir & if flipped then id else negate)
         SDL.rendererDrawColor renderer $= V4 0 255 0 255
         SDL.fillRect renderer $ Just scrCurrentMarkerRect
@@ -47,8 +46,8 @@ render renderer gs = do
       Block.Static -> pure ()
       Block.Pushable -> pure ()
   SDL.rendererDrawColor renderer $= V4 191 191 191 255
-  let levelBounds = view #_levelBounds gs
-  SDL.drawRect renderer . Just . Rect.toSdl . fmap fromIntegral . Camera.rectToScreen camera $ levelBounds
+  let levelBounds = fromIntegral <$> view #_levelBounds gs
+  SDL.drawRect renderer . Just . drawnRect camera $ levelBounds
   SDL.present renderer
 
 staticBlocks :: GameState -> [Block Float]
