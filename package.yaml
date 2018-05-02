@@ -45,6 +45,7 @@ default-extensions:
   - StrictData
   - TypeApplications
   - TypeFamilies
+  - ViewPatterns
 
 ghc-options:
   - -Wall

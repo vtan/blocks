@@ -12,6 +12,12 @@ data Rect a = Rect
   }
   deriving (Show, Generic, Functor)
 
+fromCenterRadius :: Num a => V2 a -> V2 a -> Rect a
+fromCenterRadius c r = Rect (c - r) (2 *^ r)
+
+center :: Fractional a => Rect a -> V2 a
+center (Rect xy wh) = xy + wh / 2
+
 contains :: (Num a, Ord a) => Rect a -> V2 a -> Bool
 contains (Rect (V2 x y) (V2 w h)) (V2 px py) =
   px >= x && px < x + w && py >= y && py < y + h
@@ -24,6 +30,5 @@ intersects :: (Num a, Ord a) => Rect a -> Rect a -> Bool
 intersects (Rect (V2 ax ay) (V2 aw ah)) (Rect (V2 bx by) (V2 bw bh)) = 
   abs (ax - bx) * 2 < aw + bw && abs (ay - by) * 2 < ah + bh
 
-toSdl :: Integral a => Rect a -> SDL.Rectangle CInt
-toSdl (Rect xy wh) = 
-  fromIntegral <$> SDL.Rectangle (P xy) wh
+toSdl :: Rect a -> SDL.Rectangle a
+toSdl (Rect xy wh) = SDL.Rectangle (P xy) wh
