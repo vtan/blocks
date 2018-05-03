@@ -8,12 +8,14 @@ import qualified App.Rect as Rect
 
 import App.Block (Block(..))
 import App.Camera (Camera)
+import App.Editor (Editor)
 import App.Level (Level)
 
 data GameState = GameState
   { _currentLevel :: Level
   , _blockById :: IntMap (Block Int)
   , _currentAnimation :: Maybe Animation
+  , _editor :: Maybe Editor
   , _camera :: Camera Int
   , _totalTime :: Float
   , _quit :: Bool
@@ -38,6 +40,7 @@ initial = GameState
   { _currentLevel = Level.initial
   , _blockById = view #_blockById Level.initial
   , _currentAnimation = Nothing
+  , _editor = Nothing
   , _camera = Camera.initial
   , _totalTime = 0
   , _quit = False

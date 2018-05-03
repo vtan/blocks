@@ -18,7 +18,8 @@ import SDL (($=))
 
 render :: SDL.Renderer -> GameState -> IO ()
 render renderer gs = do
-  SDL.rendererDrawColor renderer $= V4 0 0 0 255
+  SDL.rendererDrawColor renderer $= 
+    if has (#_editor . _Just) gs then V4 0 0 31 255 else V4 0 0 0 255
   SDL.clear renderer
   let blocks = (staticBlocks <> animatedBlocks) gs
       camera = fromIntegral <$> view #_camera gs

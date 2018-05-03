@@ -6,6 +6,7 @@ import App.Prelude
 
 import qualified App.Block as Block
 import qualified App.Camera as Camera
+import qualified App.Editor as Editor
 import qualified App.GameState as GameState
 import qualified App.Rect as Rect
 import qualified Control.Monad.Writer.CPS as Writer
@@ -21,11 +22,14 @@ animationLength = 0.2
 update :: Float -> [SDL.Event] -> GameState -> GameState
 update lastFrameTime events =
   over #_totalTime (+ lastFrameTime)
-  >>> updateAnimation
   >>> (\gs -> foldl' handleEvent gs events)
+  >>> (\gs  -> if has (#_editor . _Nothing) gs
+        then updateGame gs
+        else gs
+      )
 
-updateAnimation :: GameState -> GameState
-updateAnimation gs =
+updateGame :: GameState -> GameState
+updateGame gs =
   view #_currentAnimation gs & maybe gs (\anim ->
     if view #_end anim < view #_totalTime gs
     then view #_after anim
@@ -33,35 +37,66 @@ updateAnimation gs =
   )
 
 handleEvent :: GameState -> SDL.Event -> GameState
-handleEvent gs = \case
+handleEvent gs event =
+  handleCommonEvent gs event
+    & fromMaybe (
+        if has (#_editor . _Just) gs
+        then handleEditorEvent gs event
+        else handleGameEvent gs event
+      )
+
+handleCommonEvent :: GameState -> SDL.Event -> Maybe GameState
+handleCommonEvent gs = \case
   SDL.Event { SDL.eventPayload = SDL.QuitEvent } ->
-    set #_quit True gs
+    Just $ set #_quit True gs
+  _ -> Nothing
+
+-- TODO pattern synonyms for events?
+handleGameEvent :: GameState -> SDL.Event -> GameState
+handleGameEvent gs = \case
   SDL.Event
     { SDL.eventPayload = SDL.MouseButtonEvent
       ( SDL.MouseButtonEventData
         { SDL.mouseButtonEventMotion = SDL.Released
         , SDL.mouseButtonEventButton = SDL.ButtonLeft
-        , SDL.mouseButtonEventPos = SDL.P (clickPos)
+        , SDL.mouseButtonEventPos = SDL.P (fmap fromIntegral -> clickPos)
         }
       )
     } | gs & has (#_currentAnimation . _Nothing) ->
-    let clickTile = floor @Double <$>
-          Camera.screenToPoint (view #_camera gs) (fmap fromIntegral clickPos)
-        clickBlock = GameState.findBlockAt gs clickTile
-     in maybe gs (flip blockClicked gs) clickBlock
+      let clickTile = floor @Double <$>
+            Camera.screenToPoint (view #_camera gs) clickPos
+          clickBlock = GameState.findBlockAt gs clickTile
+      in maybe gs (flip blockClicked gs) clickBlock
   SDL.Event 
     { SDL.eventPayload = SDL.KeyboardEvent 
       ( SDL.KeyboardEventData
-        { SDL.keyboardEventKeyMotion = SDL.Pressed
-        , SDL.keyboardEventKeysym = SDL.Keysym { SDL.keysymScancode = SDL.ScancodeR }
+        { SDL.keyboardEventKeyMotion = SDL.Released
+        , SDL.keyboardEventKeysym = SDL.Keysym { SDL.keysymScancode = scancode }
         }
       )
-    } ->
-    gs
-      & set #_blockById (view (#_currentLevel . #_blockById) gs)
-      & set #_currentAnimation Nothing
-  _ ->
-    gs
+    } -> case scancode of
+      SDL.ScancodeE -> gs 
+        & set #_editor (Just . Editor.fromLevel $ view #_currentLevel gs)
+        & set #_currentAnimation Nothing
+      SDL.ScancodeR -> gs
+        & set #_blockById (view (#_currentLevel . #_blockById) gs)
+        & set #_currentAnimation Nothing
+      _ -> gs
+  _ -> gs
+ 
+handleEditorEvent :: GameState -> SDL.Event -> GameState
+handleEditorEvent gs = \case
+  SDL.Event 
+    { SDL.eventPayload = SDL.KeyboardEvent 
+      ( SDL.KeyboardEventData
+        { SDL.keyboardEventKeyMotion = SDL.Released
+        , SDL.keyboardEventKeysym = SDL.Keysym { SDL.keysymScancode = scancode }
+        }
+      )
+    } -> case scancode of
+      SDL.ScancodeE -> gs & set #_editor Nothing
+      _ -> gs
+  _ -> gs
 
 blockClicked :: Block Int -> GameState -> GameState
 blockClicked block gs =
