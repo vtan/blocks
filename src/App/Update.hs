@@ -99,6 +99,27 @@ handleGameEvent gs = \case
 handleEditorEvent :: GameState -> SDL.Event -> GameState
 handleEditorEvent gs = \case
   KeyReleaseEvent SDL.ScancodeE -> gs & set #_editor Nothing
+  MouseButtonEvent SDL.Pressed pos ->
+    let camera = fromIntegral <$> view #_camera gs
+        clickedTile = floor @Float <$> Camera.screenToPoint @Int camera pos
+    in case gs
+      & view (#_editor. _Just . #_level . #_blockById)
+      & find (\block -> Rect.contains (view #_rect block) clickedTile)
+    of
+      Just block -> gs
+        & set (#_editor . _Just . #_currentAction) (Just $ Editor.MoveBlock block clickedTile)
+      Nothing -> gs
+  MouseButtonEvent SDL.Released pos ->
+    let camera = fromIntegral <$> view #_camera gs
+        clickedTile = floor @Float <$> Camera.screenToPoint @Int camera pos
+    in case preview (#_editor . _Just . #_currentAction . _Just) gs of
+      Just (Editor.MoveBlock block grabbedTile) ->
+        let blockId = view #_id block
+            block' = block & over (#_rect . #_xy) (+ (clickedTile - grabbedTile))
+        in gs
+          & set (#_editor . _Just . #_level . #_blockById . at blockId . _Just) block'
+          & set (#_editor . _Just . #_currentAction) Nothing
+      Nothing -> gs
   _ -> gs
 
 blockClicked :: Block Int -> GameState -> GameState

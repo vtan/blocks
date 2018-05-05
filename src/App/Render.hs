@@ -18,11 +18,35 @@ import SDL (($=))
 
 render :: SDL.Renderer -> GameState -> IO ()
 render renderer gs = do
-  SDL.rendererDrawColor renderer $= 
-    if has (#_editor . _Just) gs then V4 0 0 31 255 else V4 0 0 0 255
+  if has (#_editor . _Just) gs
+  then renderEditor renderer gs
+  else renderGame renderer gs
+  SDL.present renderer
+
+renderGame :: SDL.Renderer -> GameState -> IO ()
+renderGame renderer gs = do
+  SDL.rendererDrawColor renderer $= V4 0 0 0 255
   SDL.clear renderer
   let blocks = (staticBlocks <> animatedBlocks) gs
       camera = fromIntegral <$> view #_camera gs
+  renderBlocks renderer camera blocks
+  SDL.rendererDrawColor renderer $= V4 191 191 191 255
+  let levelBounds = fromIntegral <$> view (#_currentLevel . #_bounds) gs
+  SDL.drawRect renderer . Just . drawnRect camera $ levelBounds
+
+renderEditor :: SDL.Renderer -> GameState -> IO ()
+renderEditor renderer gs = do
+  SDL.rendererDrawColor renderer $= V4 0 0 31 255
+  SDL.clear renderer
+  let blocks = gs & view (#_editor . _Just . #_level . #_blockById) & toList & map (fmap fromIntegral)
+      camera = fromIntegral <$> view #_camera gs
+  renderBlocks renderer camera blocks
+  SDL.rendererDrawColor renderer $= V4 191 191 191 255
+  let levelBounds = fromIntegral <$> view (#_currentLevel . #_bounds) gs
+  SDL.drawRect renderer . Just . drawnRect camera $ levelBounds
+
+renderBlocks :: SDL.Renderer -> Camera Float -> [Block Float] -> IO ()
+renderBlocks renderer camera blocks = 
   for_ blocks $ \block -> do
     let rect = view #_rect block
         scrRect = drawnRect camera rect
@@ -46,10 +70,6 @@ render renderer gs = do
         SDL.fillRect renderer $ Just scrOtherMarkerRect
       Block.Static -> pure ()
       Block.Pushable -> pure ()
-  SDL.rendererDrawColor renderer $= V4 191 191 191 255
-  let levelBounds = fromIntegral <$> view (#_currentLevel . #_bounds) gs
-  SDL.drawRect renderer . Just . drawnRect camera $ levelBounds
-  SDL.present renderer
 
 staticBlocks :: GameState -> [Block Float]
 staticBlocks gs =

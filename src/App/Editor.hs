@@ -2,6 +2,7 @@ module App.Editor where
 
 import App.Prelude
 
+import App.Block (Block)
 import App.Level (Level)
 
 data Editor = Editor
@@ -11,7 +12,10 @@ data Editor = Editor
   deriving (Show, Generic)
 
 data Action
-  = MoveBlock { _id :: Int, _from :: V2 Int }
+  = MoveBlock 
+    { _block :: Block Int 
+    , _grabbedTile :: V2 Int
+    }
   deriving (Show, Generic)
 
 fromLevel :: Level -> Editor
