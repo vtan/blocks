@@ -45,6 +45,8 @@ renderEditor renderer gs = do
         Just (Editor.MoveBlock block grabbedPoint) -> 
           [fmap fromIntegral block & over (#_rect . #_xy) (+ (mouseTile - grabbedPoint))]
         Nothing -> []
+      snapRects = editedBlocks
+        <&> over #_xy (fmap (fromIntegral @Int . round)) . view #_rect
       staticBlocks = gs
         & view (#_editor . _Just . #_level . #_blockById)
         & toList
@@ -52,6 +54,8 @@ renderEditor renderer gs = do
         & filter (\b -> not $ any (Block.eqId b) editedBlocks)
       blocks = staticBlocks <> editedBlocks
       camera = fromIntegral <$> view #_camera gs
+  SDL.rendererDrawColor renderer $= V4 191 191 191 255
+  for_ snapRects $ \r -> SDL.drawRect renderer (Just $ drawnRect camera r)
   renderBlocks renderer camera blocks
   SDL.rendererDrawColor renderer $= V4 191 191 191 255
   let levelBounds = fromIntegral <$> view (#_currentLevel . #_bounds) gs
