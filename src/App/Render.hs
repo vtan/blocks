@@ -41,12 +41,18 @@ renderEditor renderer gs = do
   SDL.clear renderer
   SDL.P mousePos <- SDL.getAbsoluteMouseLocation
   let mouseTile = Camera.screenToPoint (view #_camera gs) $ fmap fromIntegral mousePos
+      -- TODO move this to App.Editor?
       editedBlocks = case preview (#_editor . _Just . #_currentAction . _Just) gs of
         Just (Editor.MoveBlock block grabbedPoint) -> 
           [fmap fromIntegral block & over (#_rect . #_xy) (+ (mouseTile - grabbedPoint))]
+        Just (Editor.ResizeBlock block grabbedPoint moveOrigin) -> 
+          [fmap fromIntegral block & over #_rect (Editor.resize moveOrigin (mouseTile - grabbedPoint))]
         Nothing -> []
-      snapRects = editedBlocks
-        <&> over #_xy (fmap (fromIntegral @Int . round)) . view #_rect
+      snapRects = editedBlocks & map (
+          view #_rect
+          >>> over #_xy (fmap (fromIntegral @Int @Float . round))
+          >>> over #_wh (fmap (fromIntegral @Int . round))
+        )
       staticBlocks = gs
         & view (#_editor . _Just . #_level . #_blockById)
         & toList

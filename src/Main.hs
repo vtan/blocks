@@ -27,7 +27,10 @@ main = do
       Nothing -> pure ()
 
     events <- SDL.pollEvents
-    let !gs' = Update.update (view #_lastFrameTime fpsCounter) events gs
+    keyModifier <- SDL.getModState
+    let !gs' = gs
+          & set (#_keyModifier) keyModifier
+          & Update.update (view #_lastFrameTime fpsCounter) events
 
     Render.render renderer gs'
 

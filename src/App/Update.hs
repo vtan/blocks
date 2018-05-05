@@ -103,20 +103,33 @@ handleEditorEvent gs = \case
     let camera = fromIntegral <$> view #_camera gs
         clickedPoint = Camera.screenToPoint @Int camera pos
         clickedTile = floor <$> clickedPoint
+        resize = view #_keyModifier gs
+          & (||) <$> SDL.keyModifierLeftShift <*> SDL.keyModifierRightShift
     in case gs
       & view (#_editor. _Just . #_level . #_blockById)
       & find (\block -> Rect.contains (view #_rect block) clickedTile)
     of
+      Just block | resize -> 
+        let moveOrigin = (<) <$> clickedPoint <*> Rect.center (fromIntegral <$> view #_rect block)
+        in gs
+          & set (#_editor . _Just . #_currentAction) (Just $ Editor.ResizeBlock block clickedPoint moveOrigin)
       Just block -> gs
         & set (#_editor . _Just . #_currentAction) (Just $ Editor.MoveBlock block clickedPoint)
       Nothing -> gs
   MouseButtonEvent SDL.Released pos ->
+    -- TODO move the logic to App.Editor?
     let camera = fromIntegral <$> view #_camera gs
         pos' = Camera.screenToPoint @Int camera pos
     in case preview (#_editor . _Just . #_currentAction . _Just) gs of
       Just (Editor.MoveBlock block grabbedPoint) ->
         let blockId = view #_id block
             block' = block & over (#_rect . #_xy) (+ (round <$> pos' - grabbedPoint))
+        in gs
+          & set (#_editor . _Just . #_level . #_blockById . at blockId . _Just) block'
+          & set (#_editor . _Just . #_currentAction) Nothing
+      Just (Editor.ResizeBlock block grabbedPoint moveOrigin) ->
+        let blockId = view #_id block
+            block' = block & over #_rect (fmap round . Editor.resize moveOrigin (pos' - grabbedPoint) . fmap fromIntegral)
         in gs
           & set (#_editor . _Just . #_level . #_blockById . at blockId . _Just) block'
           & set (#_editor . _Just . #_currentAction) Nothing

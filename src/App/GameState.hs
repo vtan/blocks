@@ -5,6 +5,8 @@ import App.Prelude
 import qualified App.Camera as Camera
 import qualified App.Level as Level
 import qualified App.Rect as Rect
+import qualified SDL
+import qualified SDL.Internal.Numbered
 
 import App.Block (Block(..))
 import App.Camera (Camera)
@@ -18,6 +20,7 @@ data GameState = GameState
   , _editor :: Maybe Editor
   , _camera :: Camera Int
   , _totalTime :: Float
+  , _keyModifier :: SDL.KeyModifier
   , _quit :: Bool
   }
   deriving (Show, Generic)
@@ -43,5 +46,6 @@ initial = GameState
   , _editor = Nothing
   , _camera = Camera.initial
   , _totalTime = 0
+  , _keyModifier = SDL.Internal.Numbered.fromNumber 0
   , _quit = False
   }
