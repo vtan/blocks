@@ -101,21 +101,22 @@ handleEditorEvent gs = \case
   KeyReleaseEvent SDL.ScancodeE -> gs & set #_editor Nothing
   MouseButtonEvent SDL.Pressed pos ->
     let camera = fromIntegral <$> view #_camera gs
-        clickedTile = floor @Float <$> Camera.screenToPoint @Int camera pos
+        clickedPoint = Camera.screenToPoint @Int camera pos
+        clickedTile = floor <$> clickedPoint
     in case gs
       & view (#_editor. _Just . #_level . #_blockById)
       & find (\block -> Rect.contains (view #_rect block) clickedTile)
     of
       Just block -> gs
-        & set (#_editor . _Just . #_currentAction) (Just $ Editor.MoveBlock block clickedTile)
+        & set (#_editor . _Just . #_currentAction) (Just $ Editor.MoveBlock block clickedPoint)
       Nothing -> gs
   MouseButtonEvent SDL.Released pos ->
     let camera = fromIntegral <$> view #_camera gs
-        clickedTile = floor @Float <$> Camera.screenToPoint @Int camera pos
+        pos' = Camera.screenToPoint @Int camera pos
     in case preview (#_editor . _Just . #_currentAction . _Just) gs of
-      Just (Editor.MoveBlock block grabbedTile) ->
+      Just (Editor.MoveBlock block grabbedPoint) ->
         let blockId = view #_id block
-            block' = block & over (#_rect . #_xy) (+ (clickedTile - grabbedTile))
+            block' = block & over (#_rect . #_xy) (+ (round <$> pos' - grabbedPoint))
         in gs
           & set (#_editor . _Just . #_level . #_blockById . at blockId . _Just) block'
           & set (#_editor . _Just . #_currentAction) Nothing

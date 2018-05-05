@@ -6,6 +6,7 @@ import App.Prelude
 
 import qualified App.Block as Block
 import qualified App.Camera as Camera
+import qualified App.Editor as Editor
 import qualified App.Rect as Rect
 import qualified SDL as SDL
 
@@ -38,7 +39,18 @@ renderEditor :: SDL.Renderer -> GameState -> IO ()
 renderEditor renderer gs = do
   SDL.rendererDrawColor renderer $= V4 0 0 31 255
   SDL.clear renderer
-  let blocks = gs & view (#_editor . _Just . #_level . #_blockById) & toList & map (fmap fromIntegral)
+  SDL.P mousePos <- SDL.getAbsoluteMouseLocation
+  let mouseTile = Camera.screenToPoint (view #_camera gs) $ fmap fromIntegral mousePos
+      editedBlocks = case preview (#_editor . _Just . #_currentAction . _Just) gs of
+        Just (Editor.MoveBlock block grabbedPoint) -> 
+          [fmap fromIntegral block & over (#_rect . #_xy) (+ (mouseTile - grabbedPoint))]
+        Nothing -> []
+      staticBlocks = gs
+        & view (#_editor . _Just . #_level . #_blockById)
+        & toList
+        & map (fmap fromIntegral)
+        & filter (\b -> not $ any (Block.eqId b) editedBlocks)
+      blocks = staticBlocks <> editedBlocks
       camera = fromIntegral <$> view #_camera gs
   renderBlocks renderer camera blocks
   SDL.rendererDrawColor renderer $= V4 191 191 191 255

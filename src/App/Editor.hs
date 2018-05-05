@@ -14,7 +14,7 @@ data Editor = Editor
 data Action
   = MoveBlock 
     { _block :: Block Int 
-    , _grabbedTile :: V2 Int
+    , _grabbedPoint :: V2 Float
     }
   deriving (Show, Generic)
 
