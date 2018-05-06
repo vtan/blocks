@@ -45,8 +45,8 @@ renderEditor renderer gs = do
       editedBlocks = case preview (#_editor . _Just . #_currentAction . _Just) gs of
         Just (Editor.MoveBlock block grabbedPoint) -> 
           [fmap fromIntegral block & over (#_rect . #_xy) (+ (mouseTile - grabbedPoint))]
-        Just (Editor.ResizeBlock block grabbedPoint moveOrigin) -> 
-          [fmap fromIntegral block & over #_rect (Editor.resize moveOrigin (mouseTile - grabbedPoint))]
+        Just (Editor.ResizeBlock block grabbedPoint resizeDir) -> 
+          [fmap fromIntegral block & over #_rect (Rect.extendCorner resizeDir (mouseTile - grabbedPoint))]
         Nothing -> []
       snapRects = editedBlocks & map (
           view #_rect

@@ -30,5 +30,21 @@ intersects :: (Num a, Ord a) => Rect a -> Rect a -> Bool
 intersects (Rect (V2 ax ay) (V2 aw ah)) (Rect (V2 bx by) (V2 bw bh)) = 
   abs (ax - bx) * 2 < aw + bw && abs (ay - by) * 2 < ah + bh
 
+extendCorner :: (Num a, Ord a) => V2 Bool -> V2 a -> Rect a -> Rect a
+extendCorner reverseDir delta (Rect xy wh) = normalizeWH $ Rect xy' wh'
+  where
+    xy' = (\b d coord -> if b then coord + d else coord) <$> reverseDir <*> delta <*> xy
+    wh' = (\b d coord -> if b then coord - d else coord + d) <$> reverseDir <*> delta <*> wh
+
+normalizeWH :: (Num a, Ord a) => Rect a -> Rect a
+normalizeWH (Rect (V2 x y) (V2 w h)) = Rect (V2 x' y') (V2 w' h')
+  where
+    (x', w')
+      | w < 0 = (x + w, negate w)
+      | otherwise = (x, w)
+    (y', h')
+      | h < 0 = (y + h, negate h)
+      | otherwise = (y, h)
+
 toSdl :: Rect a -> SDL.Rectangle a
 toSdl (Rect xy wh) = SDL.Rectangle (P xy) wh

@@ -127,9 +127,9 @@ handleEditorEvent gs = \case
         in gs
           & set (#_editor . _Just . #_level . #_blockById . at blockId . _Just) block'
           & set (#_editor . _Just . #_currentAction) Nothing
-      Just (Editor.ResizeBlock block grabbedPoint moveOrigin) ->
+      Just (Editor.ResizeBlock block grabbedPoint reverseDir) ->
         let blockId = view #_id block
-            block' = block & over #_rect (fmap round . Editor.resize moveOrigin (pos' - grabbedPoint) . fmap fromIntegral)
+            block' = block & over #_rect (fmap round . Rect.extendCorner reverseDir (pos' - grabbedPoint) . fmap fromIntegral)
         in gs
           & set (#_editor . _Just . #_level . #_blockById . at blockId . _Just) block'
           & set (#_editor . _Just . #_currentAction) Nothing
