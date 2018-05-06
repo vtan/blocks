@@ -40,15 +40,9 @@ renderEditor renderer gs = do
   SDL.rendererDrawColor renderer $= V4 0 0 31 255
   SDL.clear renderer
   SDL.P mousePos <- SDL.getAbsoluteMouseLocation
-  let mouseTile = Camera.screenToPoint (view #_camera gs) $ fmap fromIntegral mousePos
-      -- TODO move this to App.Editor?
-      editedBlocks = case preview (#_editor . _Just . #_currentAction . _Just) gs of
-        Just (Editor.MoveBlock block grabbedPoint) -> 
-          [fmap fromIntegral block & over (#_rect . #_xy) (+ (mouseTile - grabbedPoint))]
-        Just (Editor.ResizeBlock block grabbedPoint resizeDir) -> 
-          [fmap fromIntegral block & over #_rect (Rect.extendCorner resizeDir (mouseTile - grabbedPoint))]
-        Nothing -> []
-      snapRects = editedBlocks & map (
+  let mousePos' = Camera.screenToPoint (view #_camera gs) $ fmap fromIntegral mousePos
+      editedBlocks = view #_editor gs >>= Editor.editBlock mousePos'
+      snapRects = editedBlocks <&> (
           view #_rect
           >>> over #_xy (fmap (fromIntegral @Int @Float . round))
           >>> over #_wh (fmap (fromIntegral @Int . round))
@@ -58,7 +52,7 @@ renderEditor renderer gs = do
         & toList
         & map (fmap fromIntegral)
         & filter (\b -> not $ any (Block.eqId b) editedBlocks)
-      blocks = staticBlocks <> editedBlocks
+      blocks = staticBlocks <> toList editedBlocks
       camera = fromIntegral <$> view #_camera gs
   SDL.rendererDrawColor renderer $= V4 191 191 191 255
   for_ snapRects $ \r -> SDL.drawRect renderer (Just $ drawnRect camera r)

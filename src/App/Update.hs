@@ -117,22 +117,10 @@ handleEditorEvent gs = \case
         & set (#_editor . _Just . #_currentAction) (Just $ Editor.MoveBlock block clickedPoint)
       Nothing -> gs
   MouseButtonEvent SDL.Released pos ->
-    -- TODO move the logic to App.Editor?
     let camera = fromIntegral <$> view #_camera gs
         pos' = Camera.screenToPoint @Int camera pos
-    in case preview (#_editor . _Just . #_currentAction . _Just) gs of
-      Just (Editor.MoveBlock block grabbedPoint) ->
-        let blockId = view #_id block
-            block' = block & over (#_rect . #_xy) (+ (round <$> pos' - grabbedPoint))
-        in gs
-          & set (#_editor . _Just . #_level . #_blockById . at blockId . _Just) block'
-          & set (#_editor . _Just . #_currentAction) Nothing
-      Just (Editor.ResizeBlock block grabbedPoint reverseDir) ->
-        let blockId = view #_id block
-            block' = block & over #_rect (fmap round . Rect.extendCorner reverseDir (pos' - grabbedPoint) . fmap fromIntegral)
-        in gs
-          & set (#_editor . _Just . #_level . #_blockById . at blockId . _Just) block'
-          & set (#_editor . _Just . #_currentAction) Nothing
+    in case view #_editor gs >>= Editor.endEdit pos' of
+      Just editor' -> gs & set #_editor (Just editor')
       Nothing -> gs
   _ -> gs
 

@@ -44,6 +44,7 @@ default-extensions:
   - PatternSynonyms
   - ScopedTypeVariables
   - StrictData
+  - TupleSections
   - TypeApplications
   - TypeFamilies
   - ViewPatterns
