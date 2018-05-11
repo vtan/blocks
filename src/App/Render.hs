@@ -8,13 +8,13 @@ import qualified App.Block as Block
 import qualified App.Camera as Camera
 import qualified App.Editor as Editor
 import qualified App.Rect as Rect
+import qualified Linear as Lin
 import qualified SDL as SDL
 
 import App.Block (Block)
 import App.Camera (Camera)
 import App.GameState (GameState)
 import App.Rect (Rect)
-import Linear (lerp)
 import SDL (($=))
 
 render :: SDL.Renderer -> GameState -> IO ()
@@ -105,7 +105,7 @@ animatedBlocks gs =
         & toList
         & map (\(block, tgt) -> block
             & fmap fromIntegral
-            & over (#_rect . #_xy) (\src -> lerp t src (fromIntegral <$> tgt))
+            & over (#_rect . #_xy) (\src -> Lin.lerp t src (fromIntegral <$> tgt))
           )
     Nothing -> []
 
@@ -115,4 +115,6 @@ drawnRect camera =
 
 sideMarkerRect :: Rect Float -> V2 Float -> Rect Float
 sideMarkerRect rect dir =
-  Rect.fromCenterRadius (Rect.center rect + 0.35 *^ dir) 0.08
+  Rect.fromCenterRadius 
+    (Rect.center rect + (0.5 *^ view #_wh rect - 0.15) * dir) 
+    0.08
