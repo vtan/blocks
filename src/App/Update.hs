@@ -11,6 +11,7 @@ import qualified App.GameState as GameState
 import qualified App.Rect as Rect
 import qualified Control.Monad.Writer.CPS as Writer
 import qualified Data.IntMap.Strict as IntMap
+import qualified Linear as Lin
 import qualified SDL as SDL
 
 import App.Block (Block)
@@ -40,6 +41,15 @@ pattern MouseButtonEvent motion pos <-
         , SDL.mouseButtonEventButton = SDL.ButtonLeft
         , SDL.mouseButtonEventPos = SDL.P (fmap fromIntegral -> pos)
         }
+      )
+    }
+
+pattern MouseMotionEvent :: Num a => V2 a -> SDL.Event
+pattern MouseMotionEvent pos <-
+  SDL.Event
+    { SDL.eventPayload = SDL.MouseMotionEvent
+      ( SDL.MouseMotionEventData
+        { SDL.mouseMotionEventPos = SDL.P (fmap fromIntegral -> pos) }
       )
     }
 
@@ -97,6 +107,7 @@ handleGameEvent gs = \case
   _ -> gs
  
 handleEditorEvent :: GameState -> SDL.Event -> GameState
+-- TODO match on editor here?
 handleEditorEvent gs = \case
   KeyReleaseEvent SDL.ScancodeE -> gs & set #_editor Nothing
   MouseButtonEvent SDL.Pressed pos ->
@@ -122,6 +133,23 @@ handleEditorEvent gs = \case
     in case view #_editor gs >>= Editor.endEdit pos' of
       Just editor' -> gs & set #_editor (Just editor')
       Nothing -> gs
+  -- TODO move to Editor?
+  MouseMotionEvent pos ->
+    let camera = fromIntegral <$> view #_camera gs
+        pos' = Camera.screenToPoint @Int camera pos
+    in case preview (#_editor . _Just . #_currentAction . _Just) gs of
+      Just (Editor.OverBlockCorner _ _ cornerPos) | Lin.qd cornerPos pos' > 0.1 * 0.1 -> 
+        gs & set (#_editor . _Just . #_currentAction) Nothing
+      Nothing ->
+        case view (#_editor . _Just . #_level . #_blockById) gs
+          & toList
+          & mapMaybe (\block -> (block,) <$> Rect.cornerNear 0.1 pos' (fromIntegral <$> view #_rect block))
+          & listToMaybe
+        of
+          Just (block, (corner, cornerPos)) -> gs
+            & set (#_editor . _Just . #_currentAction) (Just $ Editor.OverBlockCorner block corner cornerPos)
+          Nothing -> gs
+      _ -> gs
   _ -> gs
 
 blockClicked :: Block Int -> GameState -> GameState

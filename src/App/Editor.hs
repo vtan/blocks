@@ -23,6 +23,11 @@ data Action
     , _grabbedPoint :: V2 Float
     , _resizeDir :: V2 Bool
     }
+  | OverBlockCorner
+    { _block :: Block Int
+    , _corner :: Rect.Corner
+    , _cornerPos :: V2 Float
+    }
   deriving (Show, Generic)
 
 fromLevel :: Level -> Editor
@@ -33,13 +38,14 @@ fromLevel level = Editor
 
 editBlock :: V2 Float -> Editor -> Maybe (Block Float)
 editBlock mousePos editor =
-  view #_currentAction editor <&> \case
+  view #_currentAction editor >>= \case
     MoveBlock (fmap fromIntegral -> block) grabbedPoint ->
       let delta = mousePos - grabbedPoint
-      in block & over (#_rect . #_xy) (+ delta)
+      in Just (block & over (#_rect . #_xy) (+ delta))
     ResizeBlock (fmap fromIntegral -> block) grabbedPoint reverseDir ->
       let delta = mousePos - grabbedPoint
-      in block & over #_rect (Rect.extendCorner reverseDir delta)
+      in Just (block & over #_rect (Rect.extendCorner reverseDir delta))
+    OverBlockCorner{} -> Nothing
 
 endEdit :: V2 Float -> Editor -> Maybe Editor
 endEdit mousePos editor =

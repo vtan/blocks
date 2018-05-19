@@ -2,6 +2,7 @@ module App.Rect where
 
 import App.Prelude
 
+import qualified Linear as Lin
 import qualified SDL
 
 import Linear.Affine (Point(P))
@@ -48,3 +49,21 @@ normalizeWH (Rect (V2 x y) (V2 w h)) = Rect (V2 x' y') (V2 w' h')
 
 toSdl :: Rect a -> SDL.Rectangle a
 toSdl (Rect xy wh) = SDL.Rectangle (P xy) wh
+
+data Dir = Min | Max
+  deriving (Show)
+
+type Corner = V2 Dir
+
+corners :: Num a => Rect a -> [(Corner, V2 a)]
+corners (Rect (V2 x y) (V2 w h)) =
+  [ (V2 dirx diry, V2 posx posy) 
+  | (dirx, posx) <- [(Min, x), (Max, x + w)]
+  , (diry, posy) <- [(Min, y), (Max, y + h)]
+  ]
+
+cornerNear :: (Num a, Ord a) => a -> V2 a -> Rect a -> Maybe (Corner, V2 a)
+cornerNear distanceThreshold pos rect =
+  let distSq = distanceThreshold * distanceThreshold
+  in corners rect
+    & find (\(_, cornerPos) -> Lin.qd pos cornerPos <= distSq)

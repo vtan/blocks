@@ -36,30 +36,38 @@ renderGame renderer gs = do
   SDL.drawRect renderer . Just . drawnRect camera $ levelBounds
 
 renderEditor :: SDL.Renderer -> GameState -> IO ()
-renderEditor renderer gs = do
-  SDL.rendererDrawColor renderer $= V4 0 0 31 255
-  SDL.clear renderer
-  SDL.P mousePos <- SDL.getAbsoluteMouseLocation
-  let mousePos' = Camera.screenToPoint (view #_camera gs) $ fmap fromIntegral mousePos
-      editedBlocks = view #_editor gs >>= Editor.editBlock mousePos'
-      snapRects = editedBlocks <&> (
-          view #_rect
-          >>> over #_xy (fmap (fromIntegral @Int @Float . round))
-          >>> over #_wh (fmap (fromIntegral @Int . round))
-        )
-      staticBlocks = gs
-        & view (#_editor . _Just . #_level . #_blockById)
-        & toList
-        & map (fmap fromIntegral)
-        & filter (\b -> not $ any (Block.eqId b) editedBlocks)
-      blocks = staticBlocks <> toList editedBlocks
-      camera = fromIntegral <$> view #_camera gs
-  SDL.rendererDrawColor renderer $= V4 191 191 191 255
-  for_ snapRects $ \r -> SDL.drawRect renderer (Just $ drawnRect camera r)
-  renderBlocks renderer camera blocks
-  SDL.rendererDrawColor renderer $= V4 191 191 191 255
-  let levelBounds = fromIntegral <$> view (#_currentLevel . #_bounds) gs
-  SDL.drawRect renderer . Just . drawnRect camera $ levelBounds
+renderEditor renderer gs = 
+  case view #_editor gs of
+    Just editor -> do
+      SDL.rendererDrawColor renderer $= V4 0 0 31 255
+      SDL.clear renderer
+      SDL.P mousePos <- SDL.getAbsoluteMouseLocation
+      let mousePos' = Camera.screenToPoint (view #_camera gs) $ fmap fromIntegral mousePos
+          editedBlocks = Editor.editBlock mousePos' editor
+          snapRects = editedBlocks <&> (
+              view #_rect
+              >>> over #_xy (fmap (fromIntegral @Int @Float . round))
+              >>> over #_wh (fmap (fromIntegral @Int . round))
+            )
+          staticBlocks = editor
+            & view (#_level . #_blockById)
+            & toList
+            & map (fmap fromIntegral)
+            & filter (\b -> not $ any (Block.eqId b) editedBlocks)
+          blocks = staticBlocks <> toList editedBlocks
+          camera = fromIntegral <$> view #_camera gs
+      SDL.rendererDrawColor renderer $= V4 191 191 191 255
+      for_ snapRects $ \r -> SDL.drawRect renderer (Just $ drawnRect camera r)
+      renderBlocks renderer camera blocks
+      SDL.rendererDrawColor renderer $= V4 191 191 191 255
+      let levelBounds = fromIntegral <$> view (#_currentLevel . #_bounds) gs
+      SDL.drawRect renderer . Just . drawnRect camera $ levelBounds
+      case view #_currentAction editor of
+        Just (Editor.OverBlockCorner { Editor._cornerPos = cornerPos }) ->
+          let rect = Rect.fromCenterRadius cornerPos 0.1
+          in SDL.drawRect renderer . Just . drawnRect camera $ rect
+        _ -> pure ()
+    Nothing -> pure ()
 
 renderBlocks :: SDL.Renderer -> Camera Float -> [Block Float] -> IO ()
 renderBlocks renderer camera blocks = 
