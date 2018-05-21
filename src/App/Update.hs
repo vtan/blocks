@@ -21,12 +21,12 @@ pattern QuitEvent :: SDL.Event
 pattern QuitEvent <-
   SDL.Event { SDL.eventPayload = SDL.QuitEvent }
 
-pattern KeyReleaseEvent :: SDL.Scancode -> SDL.Event
-pattern KeyReleaseEvent scancode <-
+pattern KeyPressEvent :: SDL.Scancode -> SDL.Event
+pattern KeyPressEvent scancode <-
   SDL.Event 
     { SDL.eventPayload = SDL.KeyboardEvent 
       ( SDL.KeyboardEventData
-        { SDL.keyboardEventKeyMotion = SDL.Released
+        { SDL.keyboardEventKeyMotion = SDL.Pressed
         , SDL.keyboardEventKeysym = SDL.Keysym { SDL.keysymScancode = scancode }
         }
       )
@@ -108,11 +108,11 @@ handleGameEvent gs = \case
               Camera.screenToPoint (view #_camera gs) clickPos
             clickBlock = GameState.findBlockAt gs clickTile
         in maybe gs (flip blockClicked gs) clickBlock
-  KeyReleaseEvent SDL.ScancodeE -> 
+  KeyPressEvent SDL.ScancodeE -> 
     gs 
       & set #_editor (Just . Editor.fromLevel $ view #_currentLevel gs)
       & set #_currentAnimation Nothing
-  KeyReleaseEvent SDL.ScancodeR ->
+  KeyPressEvent SDL.ScancodeR ->
     gs
       & set #_blockById (view (#_currentLevel . #_blockById) gs)
       & set #_currentAnimation Nothing
@@ -121,10 +121,10 @@ handleGameEvent gs = \case
 handleEditorEvent :: GameState -> SDL.Event -> GameState
 -- TODO match on editor here?
 handleEditorEvent gs = \case
-  KeyReleaseEvent SDL.ScancodeE -> gs & set #_editor Nothing
-  KeyReleaseEvent SDL.ScancodeB ->
+  KeyPressEvent SDL.ScancodeE -> gs & set #_editor Nothing
+  KeyPressEvent SDL.ScancodeB ->
     gs & #_editor . _Just %~ Editor.selectBounds
-  KeyReleaseEvent (scancodeToDir -> Just dir) ->
+  KeyPressEvent (scancodeToDir -> Just dir) ->
     let keyMod = gs ^. #_keyModifier
     in if SDL.keyModifierLeftShift keyMod || SDL.keyModifierRightShift keyMod
     then gs & #_editor . _Just %~ Editor.resizeSelection dir
