@@ -62,3 +62,11 @@ resizeSelection dir editor@Editor{ _selection } =
       editor & #_level . #_bounds . #_wh %~ \wh ->
         max 1 <$> wh + dir
     Nothing -> editor
+
+orientSelection :: V2 Int -> Editor -> Editor
+orientSelection dir editor@Editor{ _selection } =
+  case _selection of
+    Just BlockSelection{ _blockId } ->
+      editor & #_level . #_blockById . at _blockId . _Just . #_orientation .~ dir
+    Just BoundsSelection -> editor
+    Nothing -> editor

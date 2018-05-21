@@ -63,16 +63,17 @@ renderBlocks renderer camera blocks =
   for_ blocks $ \block -> do
     let rect = view #_rect block
         scrRect = drawnRect camera rect
+        dir = fromIntegral <$> block ^. #_orientation
     SDL.rendererDrawColor renderer $= V4 127 127 127 255
     SDL.fillRect renderer $ Just scrRect
     SDL.rendererDrawColor renderer $= V4 63 63 63 255
     SDL.drawRect renderer $ Just scrRect
     case view #_behavior block of
-      Block.Movable { Block._direction = (fmap fromIntegral -> dir) } -> do
+      Block.Movable -> do
         let scrMarkerRect = drawnRect camera $ sideMarkerRect rect dir
         SDL.rendererDrawColor renderer $= V4 0 255 0 255
         SDL.fillRect renderer $ Just scrMarkerRect
-      Block.Flippable { Block._direction = (fmap fromIntegral -> dir), Block._flipped = flipped } -> do
+      Block.Flippable { Block._flipped = flipped } -> do
         let scrCurrentMarkerRect = drawnRect camera
               $ sideMarkerRect rect (dir & if flipped then negate else id)
             scrOtherMarkerRect = drawnRect camera

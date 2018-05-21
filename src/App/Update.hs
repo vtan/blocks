@@ -13,7 +13,7 @@ import qualified Control.Monad.Writer.CPS as Writer
 import qualified Data.IntMap.Strict as IntMap
 import qualified SDL as SDL
 
-import App.Block (Block)
+import App.Block (Block(..))
 import App.GameState (GameState)
 
 pattern QuitEvent :: SDL.Event
@@ -103,9 +103,13 @@ handleEditorEvent gs = \case
     gs & #_editor . _Just %~ Editor.selectBounds
   KeyPressEvent (scancodeToDir -> Just dir) ->
     let keyMod = gs ^. #_keyModifier
-    in if SDL.keyModifierLeftShift keyMod || SDL.keyModifierRightShift keyMod
-    then gs & #_editor . _Just %~ Editor.resizeSelection dir
-    else gs & #_editor . _Just %~ Editor.moveSelection dir
+    in if
+      | SDL.keyModifierLeftShift keyMod || SDL.keyModifierRightShift keyMod ->
+        gs & #_editor . _Just %~ Editor.resizeSelection dir
+      | SDL.keyModifierLeftCtrl keyMod || SDL.keyModifierRightCtrl keyMod ->
+        gs & #_editor . _Just %~ Editor.orientSelection dir
+      | otherwise ->
+        gs & #_editor . _Just %~ Editor.moveSelection dir
   MouseReleaseEvent pos ->
     let camera = fromIntegral <$> view #_camera gs
         pos' = Camera.screenToPoint @Int camera pos
@@ -113,17 +117,17 @@ handleEditorEvent gs = \case
   _ -> gs
 
 blockClicked :: Block Int -> GameState -> GameState
-blockClicked block gs =
-  case view #_behavior block of
+blockClicked block@Block{ _orientation, _behavior } gs =
+  case _behavior of
     Block.Static -> gs
-    Block.Movable dir -> gs & moveBlock block dir
-    Block.Flippable normalDir flipped ->
+    Block.Movable -> gs & moveBlock block _orientation
+    Block.Flippable flipped ->
       let blockId = view #_id block
-          dir = normalDir & if flipped then negate else id
+          currentDir = _orientation & if flipped then negate else id
       in gs
-        & moveBlock block dir
+        & moveBlock block currentDir
         & set (#_currentAnimation . _Just . #_after . #_blockById . at blockId . _Just . #_behavior)
-            (Block.Flippable normalDir (not flipped))
+            (Block.Flippable $ not flipped)
     Block.Pushable -> gs
 
 moveBlock :: Block Int -> V2 Int -> GameState -> GameState
