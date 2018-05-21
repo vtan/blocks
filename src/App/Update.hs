@@ -14,6 +14,7 @@ import qualified Data.IntMap.Strict as IntMap
 import qualified SDL as SDL
 
 import App.Block (Block(..))
+import App.Editor (Editor)
 import App.GameState (GameState)
 
 pattern QuitEvent :: SDL.Event
@@ -67,9 +68,9 @@ handleEvent :: GameState -> SDL.Event -> GameState
 handleEvent gs event =
   handleCommonEvent gs event
     & fromMaybe (
-        if has (#_editor . _Just) gs
-        then handleEditorEvent gs event
-        else handleGameEvent gs event
+        case gs ^. #_editor of
+          Just editor -> handleEditorEvent editor gs event
+          Nothing -> handleGameEvent gs event
       )
 
 handleCommonEvent :: GameState -> SDL.Event -> Maybe GameState
@@ -95,10 +96,14 @@ handleGameEvent gs = \case
       & set #_currentAnimation Nothing
   _ -> gs
  
-handleEditorEvent :: GameState -> SDL.Event -> GameState
-handleEditorEvent gs = \case
+handleEditorEvent :: Editor -> GameState -> SDL.Event -> GameState
+handleEditorEvent editor gs = \case
   KeyPressEvent SDL.ScancodeE ->
-    gs & #_editor .~ Nothing
+    let level = editor ^. #_level
+    in gs
+      & #_editor .~ Nothing
+      & #_currentLevel .~ level
+      & #_blockById .~ (level ^. #_blockById)
   KeyPressEvent SDL.ScancodeB ->
     gs & #_editor . _Just %~ Editor.selectBounds
   KeyPressEvent (scancodeToDir -> Just dir) ->
