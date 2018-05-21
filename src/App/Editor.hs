@@ -16,6 +16,7 @@ data Editor = Editor
 
 data Selection
   = BlockSelection { _blockId :: Int }
+  | BoundsSelection
   deriving (Show, Generic)
 
 data Action
@@ -57,21 +58,29 @@ selectBlockAt (fmap floor -> pos) editor =
     Just Block{ _id } -> editor & #_selection .~ Just (BlockSelection _id)
     Nothing -> editor
 
-moveSelectedBlock :: V2 Int -> Editor -> Editor
-moveSelectedBlock dir editor@Editor{ _selection } =
+selectBounds :: Editor -> Editor
+selectBounds editor =
+  editor & #_selection .~ Just BoundsSelection
+
+moveSelection :: V2 Int -> Editor -> Editor
+moveSelection dir editor@Editor{ _selection } =
   case _selection of
     Just BlockSelection{ _blockId } ->
       editor & #_level . #_blockById . at _blockId . _Just . #_rect . #_xy +~ dir
-    _ -> editor
+    Just BoundsSelection ->
+      editor & #_level . #_bounds . #_xy +~ dir
+    Nothing -> editor
 
-resizeSelectedBlock :: V2 Int -> Editor -> Editor
-resizeSelectedBlock dir editor@Editor{ _selection } =
+resizeSelection :: V2 Int -> Editor -> Editor
+resizeSelection dir editor@Editor{ _selection } =
   case _selection of
     Just BlockSelection{ _blockId } ->
       editor & #_level . #_blockById . at _blockId . _Just . #_rect . #_wh %~ \wh ->
-        let wh' = wh + dir
-        in if wh' & allOf each (> 0) then wh' else wh
-    _ -> editor
+        max 1 <$> wh + dir
+    Just BoundsSelection ->
+      editor & #_level . #_bounds . #_wh %~ \wh ->
+        max 1 <$> wh + dir
+    Nothing -> editor
 
 editBlock :: V2 Float -> Editor -> Maybe (Block Float)
 editBlock mousePos editor =

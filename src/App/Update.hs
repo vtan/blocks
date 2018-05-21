@@ -122,11 +122,13 @@ handleEditorEvent :: GameState -> SDL.Event -> GameState
 -- TODO match on editor here?
 handleEditorEvent gs = \case
   KeyReleaseEvent SDL.ScancodeE -> gs & set #_editor Nothing
+  KeyReleaseEvent SDL.ScancodeB ->
+    gs & #_editor . _Just %~ Editor.selectBounds
   KeyReleaseEvent (scancodeToDir -> Just dir) ->
     let keyMod = gs ^. #_keyModifier
     in if SDL.keyModifierLeftShift keyMod || SDL.keyModifierRightShift keyMod
-    then gs & #_editor . _Just %~ Editor.resizeSelectedBlock dir
-    else gs & #_editor . _Just %~ Editor.moveSelectedBlock dir
+    then gs & #_editor . _Just %~ Editor.resizeSelection dir
+    else gs & #_editor . _Just %~ Editor.moveSelection dir
   MouseReleaseEvent pos ->
     let camera = fromIntegral <$> view #_camera gs
         pos' = Camera.screenToPoint @Int camera pos

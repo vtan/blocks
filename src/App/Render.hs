@@ -59,9 +59,12 @@ renderEditor renderer gs =
       SDL.rendererDrawColor renderer $= V4 191 191 191 255
       for_ snapRects $ \r -> SDL.drawRect renderer (Just $ drawnRect camera r)
       renderBlocks renderer camera blocks
-      SDL.rendererDrawColor renderer $= V4 191 191 191 255
-      let levelBounds = fromIntegral <$> view (#_currentLevel . #_bounds) gs
+      case editor ^. #_selection of
+        Just Editor.BoundsSelection -> SDL.rendererDrawColor renderer $= V4 255 191 255 255
+        _ -> SDL.rendererDrawColor renderer $= V4 191 191 191 255
+      let levelBounds = fromIntegral <$> view (#_level . #_bounds) editor
       SDL.drawRect renderer . Just . drawnRect camera $ levelBounds
+      SDL.rendererDrawColor renderer $= V4 191 191 191 255
       case view #_currentAction editor of
         Just (Editor.OverBlockCorner { Editor._cornerPos = cornerPos }) ->
           let rect = Rect.fromCenterRadius cornerPos 0.1
