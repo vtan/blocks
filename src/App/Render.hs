@@ -41,23 +41,12 @@ renderEditor renderer gs =
     Just editor -> do
       SDL.rendererDrawColor renderer $= V4 0 0 31 255
       SDL.clear renderer
-      SDL.P mousePos <- SDL.getAbsoluteMouseLocation
-      let mousePos' = Camera.screenToPoint (view #_camera gs) $ fmap fromIntegral mousePos
-          editedBlocks = Editor.editBlock mousePos' editor
-          snapRects = editedBlocks <&> (
-              view #_rect
-              >>> over #_xy (fmap (fromIntegral @Int @Float . round))
-              >>> over #_wh (fmap (fromIntegral @Int . round))
-            )
-          staticBlocks = editor
+      let blocks = editor
             & view (#_level . #_blockById)
             & toList
             & map (fmap fromIntegral)
-            & filter (\b -> not $ any (Block.eqId b) editedBlocks)
-          blocks = staticBlocks <> toList editedBlocks
           camera = fromIntegral <$> view #_camera gs
       SDL.rendererDrawColor renderer $= V4 191 191 191 255
-      for_ snapRects $ \r -> SDL.drawRect renderer (Just $ drawnRect camera r)
       renderBlocks renderer camera blocks
       case editor ^. #_selection of
         Just Editor.BoundsSelection -> SDL.rendererDrawColor renderer $= V4 255 191 255 255
@@ -65,11 +54,6 @@ renderEditor renderer gs =
       let levelBounds = fromIntegral <$> view (#_level . #_bounds) editor
       SDL.drawRect renderer . Just . drawnRect camera $ levelBounds
       SDL.rendererDrawColor renderer $= V4 191 191 191 255
-      case view #_currentAction editor of
-        Just (Editor.OverBlockCorner { Editor._cornerPos = cornerPos }) ->
-          let rect = Rect.fromCenterRadius cornerPos 0.1
-          in SDL.drawRect renderer . Just . drawnRect camera $ rect
-        _ -> pure ()
       for_ (editor & Editor.selectedBlock) $ \Block{ _rect } ->
         SDL.drawRect renderer . Just . drawnRect camera $ fmap fromIntegral _rect
     Nothing -> pure ()

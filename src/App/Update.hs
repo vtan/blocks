@@ -11,7 +11,6 @@ import qualified App.GameState as GameState
 import qualified App.Rect as Rect
 import qualified Control.Monad.Writer.CPS as Writer
 import qualified Data.IntMap.Strict as IntMap
-import qualified Linear as Lin
 import qualified SDL as SDL
 
 import App.Block (Block)
@@ -41,27 +40,6 @@ pattern MouseReleaseEvent pos <-
         , SDL.mouseButtonEventButton = SDL.ButtonLeft
         , SDL.mouseButtonEventPos = SDL.P (fmap fromIntegral -> pos)
         }
-      )
-    }
-
-pattern MouseButtonEvent :: Num a => SDL.InputMotion -> V2 a -> SDL.Event
-pattern MouseButtonEvent motion pos <-
-  SDL.Event
-    { SDL.eventPayload = SDL.MouseButtonEvent
-      ( SDL.MouseButtonEventData
-        { SDL.mouseButtonEventMotion = motion
-        , SDL.mouseButtonEventButton = SDL.ButtonLeft
-        , SDL.mouseButtonEventPos = SDL.P (fmap fromIntegral -> pos)
-        }
-      )
-    }
-
-pattern MouseMotionEvent :: Num a => V2 a -> SDL.Event
-pattern MouseMotionEvent pos <-
-  SDL.Event
-    { SDL.eventPayload = SDL.MouseMotionEvent
-      ( SDL.MouseMotionEventData
-        { SDL.mouseMotionEventPos = SDL.P (fmap fromIntegral -> pos) }
       )
     }
 
@@ -96,13 +74,12 @@ handleEvent gs event =
 
 handleCommonEvent :: GameState -> SDL.Event -> Maybe GameState
 handleCommonEvent gs = \case
-  QuitEvent ->
-    Just $ set #_quit True gs
+  QuitEvent -> Just $ set #_quit True gs
   _ -> Nothing
 
 handleGameEvent :: GameState -> SDL.Event -> GameState
 handleGameEvent gs = \case
-  MouseButtonEvent SDL.Released clickPos
+  MouseReleaseEvent clickPos
     | gs & has (#_currentAnimation . _Nothing) ->
         let clickTile = floor @Double <$>
               Camera.screenToPoint (view #_camera gs) clickPos
@@ -119,9 +96,9 @@ handleGameEvent gs = \case
   _ -> gs
  
 handleEditorEvent :: GameState -> SDL.Event -> GameState
--- TODO match on editor here?
 handleEditorEvent gs = \case
-  KeyPressEvent SDL.ScancodeE -> gs & set #_editor Nothing
+  KeyPressEvent SDL.ScancodeE ->
+    gs & #_editor .~ Nothing
   KeyPressEvent SDL.ScancodeB ->
     gs & #_editor . _Just %~ Editor.selectBounds
   KeyPressEvent (scancodeToDir -> Just dir) ->
