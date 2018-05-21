@@ -11,7 +11,7 @@ import qualified App.Rect as Rect
 import qualified Linear as Lin
 import qualified SDL as SDL
 
-import App.Block (Block)
+import App.Block (Block(..))
 import App.Camera (Camera)
 import App.GameState (GameState)
 import App.Rect (Rect)
@@ -67,6 +67,8 @@ renderEditor renderer gs =
           let rect = Rect.fromCenterRadius cornerPos 0.1
           in SDL.drawRect renderer . Just . drawnRect camera $ rect
         _ -> pure ()
+      for_ (editor & Editor.selectedBlock) $ \Block{ _rect } ->
+        SDL.drawRect renderer . Just . drawnRect camera $ fmap fromIntegral _rect
     Nothing -> pure ()
 
 renderBlocks :: SDL.Renderer -> Camera Float -> [Block Float] -> IO ()

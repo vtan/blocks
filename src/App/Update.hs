@@ -32,6 +32,18 @@ pattern KeyReleaseEvent scancode <-
       )
     }
 
+pattern MouseReleaseEvent :: Num a => V2 a -> SDL.Event
+pattern MouseReleaseEvent pos <-
+  SDL.Event
+    { SDL.eventPayload = SDL.MouseButtonEvent
+      ( SDL.MouseButtonEventData
+        { SDL.mouseButtonEventMotion = SDL.Released
+        , SDL.mouseButtonEventButton = SDL.ButtonLeft
+        , SDL.mouseButtonEventPos = SDL.P (fmap fromIntegral -> pos)
+        }
+      )
+    }
+
 pattern MouseButtonEvent :: Num a => SDL.InputMotion -> V2 a -> SDL.Event
 pattern MouseButtonEvent motion pos <-
   SDL.Event
@@ -110,46 +122,15 @@ handleEditorEvent :: GameState -> SDL.Event -> GameState
 -- TODO match on editor here?
 handleEditorEvent gs = \case
   KeyReleaseEvent SDL.ScancodeE -> gs & set #_editor Nothing
-  MouseButtonEvent SDL.Pressed pos ->
-    let camera = fromIntegral <$> view #_camera gs
-        clickedPoint = Camera.screenToPoint @Int camera pos
-        clickedTile = floor <$> clickedPoint
-        resize = view #_keyModifier gs
-          & (||) <$> SDL.keyModifierLeftShift <*> SDL.keyModifierRightShift
-    in case gs
-      & view (#_editor. _Just . #_level . #_blockById)
-      & find (\block -> Rect.contains (view #_rect block) clickedTile)
-    of
-      Just block | resize -> 
-        let moveOrigin = (<) <$> clickedPoint <*> Rect.center (fromIntegral <$> view #_rect block)
-        in gs
-          & set (#_editor . _Just . #_currentAction) (Just $ Editor.ResizeBlock block clickedPoint moveOrigin)
-      Just block -> gs
-        & set (#_editor . _Just . #_currentAction) (Just $ Editor.MoveBlock block clickedPoint)
-      Nothing -> gs
-  MouseButtonEvent SDL.Released pos ->
+  KeyReleaseEvent (scancodeToDir -> Just dir) ->
+    let keyMod = gs ^. #_keyModifier
+    in if SDL.keyModifierLeftShift keyMod || SDL.keyModifierRightShift keyMod
+    then gs & #_editor . _Just %~ Editor.resizeSelectedBlock dir
+    else gs & #_editor . _Just %~ Editor.moveSelectedBlock dir
+  MouseReleaseEvent pos ->
     let camera = fromIntegral <$> view #_camera gs
         pos' = Camera.screenToPoint @Int camera pos
-    in case view #_editor gs >>= Editor.endEdit pos' of
-      Just editor' -> gs & set #_editor (Just editor')
-      Nothing -> gs
-  -- TODO move to Editor?
-  MouseMotionEvent pos ->
-    let camera = fromIntegral <$> view #_camera gs
-        pos' = Camera.screenToPoint @Int camera pos
-    in case preview (#_editor . _Just . #_currentAction . _Just) gs of
-      Just (Editor.OverBlockCorner _ _ cornerPos) | Lin.qd cornerPos pos' > 0.1 * 0.1 -> 
-        gs & set (#_editor . _Just . #_currentAction) Nothing
-      Nothing ->
-        case view (#_editor . _Just . #_level . #_blockById) gs
-          & toList
-          & mapMaybe (\block -> (block,) <$> Rect.cornerNear 0.1 pos' (fromIntegral <$> view #_rect block))
-          & listToMaybe
-        of
-          Just (block, (corner, cornerPos)) -> gs
-            & set (#_editor . _Just . #_currentAction) (Just $ Editor.OverBlockCorner block corner cornerPos)
-          Nothing -> gs
-      _ -> gs
+    in gs & #_editor . _Just %~ Editor.selectBlockAt pos'
   _ -> gs
 
 blockClicked :: Block Int -> GameState -> GameState
@@ -212,3 +193,11 @@ animateMoves gs gs' moves =
     time = view #_totalTime gs
     movingBlocks = toList $ IntMap.intersectionWith (,) blocks moves
     otherBlocks = toList $ IntMap.difference blocks moves
+
+scancodeToDir :: SDL.Scancode -> Maybe (V2 Int)
+scancodeToDir = \case
+  SDL.ScancodeLeft -> Just $ V2 (-1) 0
+  SDL.ScancodeRight -> Just $ V2 1 0
+  SDL.ScancodeUp -> Just $ V2 0 (-1)
+  SDL.ScancodeDown -> Just $ V2 0 1
+  _ -> Nothing
