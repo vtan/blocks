@@ -115,6 +115,8 @@ handleEditorEvent editor gs = \case
         gs & #_editor . _Just %~ Editor.orientSelection dir
       | otherwise ->
         gs & #_editor . _Just %~ Editor.moveSelection dir
+  KeyPressEvent (scancodeToBehavior -> Just behavior) ->
+    gs & #_editor . _Just %~ Editor.setSelectionBehavior behavior
   MouseReleaseEvent pos ->
     let camera = fromIntegral <$> view #_camera gs
         pos' = Camera.screenToPoint @Int camera pos
@@ -188,4 +190,12 @@ scancodeToDir = \case
   SDL.ScancodeRight -> Just $ V2 1 0
   SDL.ScancodeUp -> Just $ V2 0 (-1)
   SDL.ScancodeDown -> Just $ V2 0 1
+  _ -> Nothing
+
+scancodeToBehavior :: SDL.Scancode -> Maybe Block.Behavior
+scancodeToBehavior = \case
+  SDL.ScancodeKP0 -> Just Block.Static
+  SDL.ScancodeKP1 -> Just Block.Pushable
+  SDL.ScancodeKP2 -> Just Block.Movable
+  SDL.ScancodeKP3 -> Just $ Block.Flippable { Block._flipped = False} 
   _ -> Nothing

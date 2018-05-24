@@ -14,9 +14,9 @@ data Block a = Block
 
 data Behavior
   = Static
+  | Pushable
   | Movable
   | Flippable { _flipped :: Bool }
-  | Pushable
   deriving (Show, Generic)
 
 eqId :: Block a -> Block a -> Bool

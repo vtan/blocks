@@ -2,6 +2,7 @@ module App.Editor where
 
 import App.Prelude
 
+import qualified App.Block as Block
 import qualified App.Rect as Rect
 
 import App.Block (Block(..))
@@ -68,5 +69,13 @@ orientSelection dir editor@Editor{ _selection } =
   case _selection of
     Just BlockSelection{ _blockId } ->
       editor & #_level . #_blockById . at _blockId . _Just . #_orientation .~ dir
+    Just BoundsSelection -> editor
+    Nothing -> editor
+
+setSelectionBehavior :: Block.Behavior -> Editor -> Editor
+setSelectionBehavior behavior editor@Editor{ _selection } =
+  case _selection of
+    Just BlockSelection{ _blockId } ->
+      editor & #_level . #_blockById . at _blockId . _Just . #_behavior .~ behavior
     Just BoundsSelection -> editor
     Nothing -> editor
