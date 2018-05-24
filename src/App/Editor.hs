@@ -9,73 +9,73 @@ import App.Block (Block(..))
 import App.Level (Level)
 
 data Editor = Editor
-  { _level :: Level
-  , _selection :: Maybe Selection
+  { level :: Level
+  , selection :: Maybe Selection
   }
   deriving (Show, Generic)
 
 data Selection
-  = BlockSelection { _blockId :: Int }
+  = BlockSelection { blockId :: Int }
   | BoundsSelection
   deriving (Show, Generic)
 
 fromLevel :: Level -> Editor
 fromLevel level = Editor
-  { _level = level
-  , _selection = Nothing
+  { level = level
+  , selection = Nothing
   }
 
 selectedBlock :: Editor -> Maybe (Block Int)
-selectedBlock editor@Editor{ _selection } =
-  case _selection of
-    Just BlockSelection{ _blockId } -> editor ^. #_level . #_blockById . at _blockId
+selectedBlock editor@Editor{ selection } =
+  case selection of
+    Just BlockSelection{ blockId } -> editor ^. #level . #blockById . at blockId
     _ -> Nothing
 
 selectBlockAt :: V2 Float -> Editor -> Editor
 selectBlockAt (fmap floor -> pos) editor =
-  let block = editor ^. #_level . #_blockById
+  let block = editor ^. #level . #blockById
         & toList
-        & find (\Block{ _rect } -> Rect.contains _rect pos)
+        & find (\Block{ rect } -> Rect.contains rect pos)
   in case block of
-    Just Block{ _id } -> editor & #_selection .~ Just (BlockSelection _id)
+    Just Block{ uid } -> editor & #selection .~ Just (BlockSelection uid)
     Nothing -> editor
 
 selectBounds :: Editor -> Editor
 selectBounds editor =
-  editor & #_selection .~ Just BoundsSelection
+  editor & #selection .~ Just BoundsSelection
 
 moveSelection :: V2 Int -> Editor -> Editor
-moveSelection dir editor@Editor{ _selection } =
-  case _selection of
-    Just BlockSelection{ _blockId } ->
-      editor & #_level . #_blockById . at _blockId . _Just . #_rect . #_xy +~ dir
+moveSelection dir editor@Editor{ selection } =
+  case selection of
+    Just BlockSelection{ blockId } ->
+      editor & #level . #blockById . at blockId . _Just . #rect . #xy +~ dir
     Just BoundsSelection ->
-      editor & #_level . #_bounds . #_xy +~ dir
+      editor & #level . #bounds . #xy +~ dir
     Nothing -> editor
 
 resizeSelection :: V2 Int -> Editor -> Editor
-resizeSelection dir editor@Editor{ _selection } =
-  case _selection of
-    Just BlockSelection{ _blockId } ->
-      editor & #_level . #_blockById . at _blockId . _Just . #_rect . #_wh %~ \wh ->
+resizeSelection dir editor@Editor{ selection } =
+  case selection of
+    Just BlockSelection{ blockId } ->
+      editor & #level . #blockById . at blockId . _Just . #rect . #wh %~ \wh ->
         max 1 <$> wh + dir
     Just BoundsSelection ->
-      editor & #_level . #_bounds . #_wh %~ \wh ->
+      editor & #level . #bounds . #wh %~ \wh ->
         max 1 <$> wh + dir
     Nothing -> editor
 
 orientSelection :: V2 Int -> Editor -> Editor
-orientSelection dir editor@Editor{ _selection } =
-  case _selection of
-    Just BlockSelection{ _blockId } ->
-      editor & #_level . #_blockById . at _blockId . _Just . #_orientation .~ dir
+orientSelection dir editor@Editor{ selection } =
+  case selection of
+    Just BlockSelection{ blockId } ->
+      editor & #level . #blockById . at blockId . _Just . #orientation .~ dir
     Just BoundsSelection -> editor
     Nothing -> editor
 
 setSelectionBehavior :: Block.Behavior -> Editor -> Editor
-setSelectionBehavior behavior editor@Editor{ _selection } =
-  case _selection of
-    Just BlockSelection{ _blockId } ->
-      editor & #_level . #_blockById . at _blockId . _Just . #_behavior .~ behavior
+setSelectionBehavior behavior editor@Editor{ selection } =
+  case selection of
+    Just BlockSelection{ blockId } ->
+      editor & #level . #blockById . at blockId . _Just . #behavior .~ behavior
     Just BoundsSelection -> editor
     Nothing -> editor

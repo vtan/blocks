@@ -5,8 +5,8 @@ import App.Prelude
 import App.Rect (Rect(..))
 
 data Camera a = Camera
-  { _scale :: a
-  , _translate :: V2 a
+  { scale :: a
+  , translate :: V2 a
   }
   deriving (Show, Generic, Functor)
 
@@ -28,6 +28,6 @@ rectToScreen cam (Rect xy wh) =
 
 initial :: Camera Int
 initial = Camera
-  { _translate = V2 64 64
-  , _scale = 48
+  { translate = V2 64 64
+  , scale = 48
   }

@@ -22,20 +22,20 @@ main = do
   fcInitial <- FpsCounter.new
   flip fix (fcInitial, GameState.initial) $ \cont (fpsCounter, gs) -> do
     start <- SDL.Raw.getPerformanceCounter
-    case view #_updatedFps fpsCounter of
+    case view #updatedFps fpsCounter of
       Just updated -> SDL.windowTitle window $= Text.pack (printf "FPS: %.2f" updated)
       Nothing -> pure ()
 
     events <- SDL.pollEvents
     keyModifier <- SDL.getModState
     let !gs' = gs
-          & set (#_keyModifier) keyModifier
-          & Update.update (view #_lastFrameTime fpsCounter) events
+          & set (#keyModifier) keyModifier
+          & Update.update (view #lastFrameTime fpsCounter) events
 
     Render.render renderer gs'
 
     end <- SDL.Raw.getPerformanceCounter
-    if view #_quit gs'
+    if view #quit gs'
     then pure ()
     else cont (FpsCounter.record fpsCounter (end - start), gs')
   SDL.quit

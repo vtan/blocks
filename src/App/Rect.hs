@@ -6,8 +6,8 @@ import qualified Linear.Affine as Lin
 import qualified SDL
 
 data Rect a = Rect
-  { _xy :: V2 a
-  , _wh :: V2 a
+  { xy :: V2 a
+  , wh :: V2 a
   }
   deriving (Show, Generic, Functor)
 

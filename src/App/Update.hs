@@ -49,18 +49,18 @@ animationLength = 0.2
 
 update :: Float -> [SDL.Event] -> GameState -> GameState
 update lastFrameTime events =
-  over #_totalTime (+ lastFrameTime)
+  over #totalTime (+ lastFrameTime)
   >>> (\gs -> foldl' handleEvent gs events)
-  >>> (\gs  -> if has (#_editor . _Nothing) gs
+  >>> (\gs  -> if has (#editor . _Nothing) gs
         then updateGame gs
         else gs
       )
 
 updateGame :: GameState -> GameState
 updateGame gs =
-  view #_currentAnimation gs & maybe gs (\anim ->
-    if view #_end anim < view #_totalTime gs
-    then view #_after anim
+  view #currentAnimation gs & maybe gs (\anim ->
+    if view #end anim < view #totalTime gs
+    then view #after anim
     else gs
   )
 
@@ -68,72 +68,72 @@ handleEvent :: GameState -> SDL.Event -> GameState
 handleEvent gs event =
   handleCommonEvent gs event
     & fromMaybe (
-        case gs ^. #_editor of
+        case gs ^. #editor of
           Just editor -> handleEditorEvent editor gs event
           Nothing -> handleGameEvent gs event
       )
 
 handleCommonEvent :: GameState -> SDL.Event -> Maybe GameState
 handleCommonEvent gs = \case
-  QuitEvent -> Just $ set #_quit True gs
+  QuitEvent -> Just $ set #quit True gs
   _ -> Nothing
 
 handleGameEvent :: GameState -> SDL.Event -> GameState
 handleGameEvent gs = \case
   MouseReleaseEvent clickPos
-    | gs & has (#_currentAnimation . _Nothing) ->
+    | gs & has (#currentAnimation . _Nothing) ->
         let clickTile = floor @Double <$>
-              Camera.screenToPoint (view #_camera gs) clickPos
+              Camera.screenToPoint (view #camera gs) clickPos
             clickBlock = GameState.findBlockAt gs clickTile
         in maybe gs (flip blockClicked gs) clickBlock
   KeyPressEvent SDL.ScancodeE -> 
     gs 
-      & set #_editor (Just . Editor.fromLevel $ view #_currentLevel gs)
-      & set #_currentAnimation Nothing
+      & set #editor (Just . Editor.fromLevel $ view #currentLevel gs)
+      & set #currentAnimation Nothing
   KeyPressEvent SDL.ScancodeR ->
     gs
-      & set #_blockById (view (#_currentLevel . #_blockById) gs)
-      & set #_currentAnimation Nothing
+      & set #blockById (view (#currentLevel . #blockById) gs)
+      & set #currentAnimation Nothing
   _ -> gs
  
 handleEditorEvent :: Editor -> GameState -> SDL.Event -> GameState
 handleEditorEvent editor gs = \case
   KeyPressEvent SDL.ScancodeE ->
-    let level = editor ^. #_level
+    let level = editor ^. #level
     in gs
-      & #_editor .~ Nothing
-      & #_currentLevel .~ level
-      & #_blockById .~ (level ^. #_blockById)
+      & #editor .~ Nothing
+      & #currentLevel .~ level
+      & #blockById .~ (level ^. #blockById)
   KeyPressEvent SDL.ScancodeB ->
-    gs & #_editor . _Just %~ Editor.selectBounds
+    gs & #editor . _Just %~ Editor.selectBounds
   KeyPressEvent (scancodeToDir -> Just dir) ->
-    let keyMod = gs ^. #_keyModifier
+    let keyMod = gs ^. #keyModifier
     in if
       | SDL.keyModifierLeftShift keyMod || SDL.keyModifierRightShift keyMod ->
-        gs & #_editor . _Just %~ Editor.resizeSelection dir
+        gs & #editor . _Just %~ Editor.resizeSelection dir
       | SDL.keyModifierLeftCtrl keyMod || SDL.keyModifierRightCtrl keyMod ->
-        gs & #_editor . _Just %~ Editor.orientSelection dir
+        gs & #editor . _Just %~ Editor.orientSelection dir
       | otherwise ->
-        gs & #_editor . _Just %~ Editor.moveSelection dir
+        gs & #editor . _Just %~ Editor.moveSelection dir
   KeyPressEvent (scancodeToBehavior -> Just behavior) ->
-    gs & #_editor . _Just %~ Editor.setSelectionBehavior behavior
+    gs & #editor . _Just %~ Editor.setSelectionBehavior behavior
   MouseReleaseEvent pos ->
-    let camera = fromIntegral <$> view #_camera gs
+    let camera = fromIntegral <$> view #camera gs
         pos' = Camera.screenToPoint @Int camera pos
-    in gs & #_editor . _Just %~ Editor.selectBlockAt pos'
+    in gs & #editor . _Just %~ Editor.selectBlockAt pos'
   _ -> gs
 
 blockClicked :: Block Int -> GameState -> GameState
-blockClicked block@Block{ _orientation, _behavior } gs =
-  case _behavior of
+blockClicked block@Block{ orientation, behavior } gs =
+  case behavior of
     Block.Static -> gs
-    Block.Movable -> gs & moveBlock block _orientation
+    Block.Movable -> gs & moveBlock block orientation
     Block.Flippable flipped ->
-      let blockId = view #_id block
-          currentDir = _orientation & if flipped then negate else id
+      let blockId = view #uid block
+          currentDir = orientation & if flipped then negate else id
       in gs
         & moveBlock block currentDir
-        & set (#_currentAnimation . _Just . #_after . #_blockById . at blockId . _Just . #_behavior)
+        & set (#currentAnimation . _Just . #after . #blockById . at blockId . _Just . #behavior)
             (Block.Flippable $ not flipped)
     Block.Pushable -> gs
 
@@ -142,45 +142,45 @@ moveBlock block dir gs =
   case Writer.runWriterT (tryPush block dir gs) of
     Just (gs', moves) ->
       let anim = animateMoves gs gs' moves
-      in gs & set #_currentAnimation (Just anim)
+      in gs & set #currentAnimation (Just anim)
     Nothing -> gs
 
 tryPush :: Block Int -> V2 Int -> GameState -> WriterT (IntMap (V2 Int)) Maybe GameState
 tryPush block dir gs =
-  case view #_behavior block of
+  case view #behavior block of
     Block.Static -> empty
     Block.Movable{} -> gs'
     Block.Flippable{} -> gs'
     Block.Pushable -> gs'
   where
     gs'
-      | Rect.containsRect (view (#_currentLevel . #_bounds) gs) movedRect =
+      | Rect.containsRect (view (#currentLevel . #bounds) gs) movedRect =
         allBlocks
         & toList
-        & filter (not . Block.eqId block)
-        & filter (view #_rect >>> Rect.intersects movedRect)
+        & filter (not . Block.eqUid block)
+        & filter (view #rect >>> Rect.intersects movedRect)
         & foldlM (\gs'' b -> tryPush b dir gs'') gs
-        & fmap (set (#_blockById . at blockId . _Just) movedBlock)
-        & collect (IntMap.singleton blockId $ view #_xy movedRect)
+        & fmap (set (#blockById . at blockId . _Just) movedBlock)
+        & collect (IntMap.singleton blockId $ view #xy movedRect)
       | otherwise = empty
-    allBlocks = gs & view #_blockById
-    blockId = block & view #_id
-    movedRect = block & view #_rect & over #_xy (+ dir)
-    movedBlock = block & set #_rect movedRect
+    allBlocks = gs & view #blockById
+    blockId = block & view #uid
+    movedRect = block & view #rect & over #xy (+ dir)
+    movedBlock = block & set #rect movedRect
     collect w x = x <* Writer.tell w
 
 animateMoves :: GameState -> GameState -> IntMap (V2 Int) -> GameState.Animation
 animateMoves gs gs' moves =
   GameState.Animation
-    { GameState._start = time
-    , GameState._end = time + animationLength
-    , GameState._movingBlocksById = movingBlocks
-    , GameState._otherBlocksById = otherBlocks
-    , GameState._after = gs'
+    { GameState.start = time
+    , GameState.end = time + animationLength
+    , GameState.movingBlocksById = movingBlocks
+    , GameState.otherBlocksById = otherBlocks
+    , GameState.after = gs'
     }
   where
-    blocks = view #_blockById gs
-    time = view #_totalTime gs
+    blocks = view #blockById gs
+    time = view #totalTime gs
     movingBlocks = toList $ IntMap.intersectionWith (,) blocks moves
     otherBlocks = toList $ IntMap.difference blocks moves
 
@@ -197,5 +197,5 @@ scancodeToBehavior = \case
   SDL.ScancodeKP0 -> Just Block.Static
   SDL.ScancodeKP1 -> Just Block.Pushable
   SDL.ScancodeKP2 -> Just Block.Movable
-  SDL.ScancodeKP3 -> Just $ Block.Flippable { Block._flipped = False} 
+  SDL.ScancodeKP3 -> Just $ Block.Flippable { Block.flipped = False} 
   _ -> Nothing

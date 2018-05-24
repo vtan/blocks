@@ -5,10 +5,10 @@ import App.Prelude
 import App.Rect (Rect)
 
 data Block a = Block
-  { _id :: Int
-  , _rect :: Rect a
-  , _orientation :: V2 Int
-  , _behavior :: Behavior
+  { uid :: Int
+  , rect :: Rect a
+  , orientation :: V2 Int
+  , behavior :: Behavior
   }
   deriving (Show, Generic, Functor)
 
@@ -16,8 +16,8 @@ data Behavior
   = Static
   | Pushable
   | Movable
-  | Flippable { _flipped :: Bool }
+  | Flippable { flipped :: Bool }
   deriving (Show, Generic)
 
-eqId :: Block a -> Block a -> Bool
-eqId = (==) `on` view #_id
+eqUid :: Block a -> Block a -> Bool
+eqUid = (==) `on` view #uid

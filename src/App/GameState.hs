@@ -14,38 +14,38 @@ import App.Editor (Editor)
 import App.Level (Level)
 
 data GameState = GameState
-  { _currentLevel :: Level
-  , _blockById :: IntMap (Block Int)
-  , _currentAnimation :: Maybe Animation
-  , _editor :: Maybe Editor
-  , _camera :: Camera Int
-  , _totalTime :: Float
-  , _keyModifier :: SDL.KeyModifier
-  , _quit :: Bool
+  { currentLevel :: Level
+  , blockById :: IntMap (Block Int)
+  , currentAnimation :: Maybe Animation
+  , editor :: Maybe Editor
+  , camera :: Camera Int
+  , totalTime :: Float
+  , keyModifier :: SDL.KeyModifier
+  , quit :: Bool
   }
   deriving (Show, Generic)
 
 data Animation = Animation
-  { _start :: Float
-  , _end :: Float
-  , _movingBlocksById :: [(Block Int, V2 Int)]
-  , _otherBlocksById :: [Block Int]
-  , _after :: GameState
+  { start :: Float
+  , end :: Float
+  , movingBlocksById :: [(Block Int, V2 Int)]
+  , otherBlocksById :: [Block Int]
+  , after :: GameState
   }
   deriving (Show, Generic)
 
 findBlockAt :: GameState -> V2 Int -> Maybe (Block Int)
-findBlockAt GameState{ _blockById = blocks } p =
-  blocks & find (\b -> Rect.contains (view #_rect b) p)
+findBlockAt GameState{ blockById = blocks } p =
+  blocks & find (\b -> Rect.contains (view #rect b) p)
 
 initial :: GameState
 initial = GameState
-  { _currentLevel = Level.initial
-  , _blockById = view #_blockById Level.initial
-  , _currentAnimation = Nothing
-  , _editor = Nothing
-  , _camera = Camera.initial
-  , _totalTime = 0
-  , _keyModifier = SDL.Internal.Numbered.fromNumber 0
-  , _quit = False
+  { currentLevel = Level.initial
+  , blockById = view #blockById Level.initial
+  , currentAnimation = Nothing
+  , editor = Nothing
+  , camera = Camera.initial
+  , totalTime = 0
+  , keyModifier = SDL.Internal.Numbered.fromNumber 0
+  , quit = False
   }
