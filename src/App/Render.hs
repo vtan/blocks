@@ -64,11 +64,15 @@ renderBlocks renderer camera blocks =
     let rect = view #_rect block
         scrRect = drawnRect camera rect
         dir = fromIntegral <$> block ^. #_orientation
-    SDL.rendererDrawColor renderer $= V4 127 127 127 255
+        behavior = view #_behavior block
+    SDL.rendererDrawColor renderer $= 
+      case behavior of
+        Block.Static -> V4 91 91 91 255
+        _ -> V4 127 127 127 255
     SDL.fillRect renderer $ Just scrRect
     SDL.rendererDrawColor renderer $= V4 63 63 63 255
     SDL.drawRect renderer $ Just scrRect
-    case view #_behavior block of
+    case behavior of
       Block.Movable -> do
         let scrMarkerRect = drawnRect camera $ sideMarkerRect rect dir
         SDL.rendererDrawColor renderer $= V4 0 255 0 255
