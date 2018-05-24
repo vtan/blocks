@@ -26,8 +26,10 @@ containsRect (Rect (V2 x1 y1) (V2 w1 h1)) (Rect (V2 x2 y2) (V2 w2 h2)) =
   x2 >= x1 && x2 + w2 <= x1 + w1 && y2 >= y1 && y2 + h2 <= y1 + h1
 
 intersects :: (Num a, Ord a) => Rect a -> Rect a -> Bool
-intersects (Rect (V2 ax ay) (V2 aw ah)) (Rect (V2 bx by) (V2 bw bh)) = 
-  abs (ax - bx) * 2 < aw + bw && abs (ay - by) * 2 < ah + bh
+intersects (Rect axy@(V2 ax ay) awh) (Rect bxy@(V2 bx by) bwh) = 
+  let V2 ax' ay' = axy + awh
+      V2 bx' by' = bxy + bwh
+  in ax < bx' && bx < ax' && ay < by' && by < ay'
 
 toSdl :: Rect a -> SDL.Rectangle a
 toSdl (Rect xy wh) = SDL.Rectangle (Lin.P xy) wh
