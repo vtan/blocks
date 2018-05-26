@@ -48,13 +48,11 @@ renderEditor renderer gs =
           camera = fromIntegral <$> view #camera gs
       SDL.rendererDrawColor renderer $= V4 191 191 191 255
       renderBlocks renderer camera blocks
-      case editor ^. #selection of
-        Just Editor.BoundsSelection -> SDL.rendererDrawColor renderer $= V4 255 191 255 255
-        _ -> SDL.rendererDrawColor renderer $= V4 191 191 191 255
+      SDL.rendererDrawColor renderer $= V4 191 191 191 255
       let levelBounds = fromIntegral <$> view (#level . #bounds) editor
       SDL.drawRect renderer . Just . drawnRect camera $ levelBounds
-      SDL.rendererDrawColor renderer $= V4 191 191 191 255
-      for_ (editor & Editor.selectedBlock) $ \Block{ rect } ->
+      for_ (editor & Editor.selectionRect) $ \rect -> do
+        SDL.rendererDrawColor renderer $= V4 255 191 255 255
         SDL.drawRect renderer . Just . drawnRect camera $ fmap fromIntegral rect
     Nothing -> pure ()
 

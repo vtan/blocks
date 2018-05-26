@@ -7,6 +7,7 @@ import qualified App.Rect as Rect
 
 import App.Block (Block(..))
 import App.Level (Level)
+import App.Rect (Rect)
 
 data Editor = Editor
   { level :: Level
@@ -25,11 +26,12 @@ fromLevel level = Editor
   , selection = Nothing
   }
 
-selectedBlock :: Editor -> Maybe (Block Int)
-selectedBlock editor@Editor{ selection } =
+selectionRect :: Editor -> Maybe (Rect Int)
+selectionRect Editor{ selection, level } =
   case selection of
-    Just BlockSelection{ blockId } -> editor ^. #level . #blockById . at blockId
-    _ -> Nothing
+    Just BlockSelection { blockId } -> level ^? #blockById . at blockId . _Just . #rect
+    Just BoundsSelection -> Just $ level ^. #bounds
+    Nothing -> Nothing
 
 selectBlockAt :: V2 Float -> Editor -> Editor
 selectBlockAt (fmap floor -> pos) editor =
