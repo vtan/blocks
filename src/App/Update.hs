@@ -106,6 +106,8 @@ handleEditorEvent editor gs = \case
       & #blockById .~ (level ^. #blockById)
   KeyPressEvent SDL.ScancodeB ->
     gs & #editor . _Just %~ Editor.selectBounds
+  KeyPressEvent SDL.ScancodeC ->
+    gs & #editor . _Just %~ Editor.selectCollectorColumn
   KeyPressEvent (scancodeToDir -> Just dir) ->
     let keyMod = gs ^. #keyModifier
     in if

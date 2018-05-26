@@ -35,7 +35,7 @@ import Foreign.C.Types as X
 import GHC.Generics as X
   (Generic)
 import Linear as X
-  (V2(..), V4(..), (*^))
+  (V2(..), V4(..), (*^), _x, _y)
 
 import qualified Data.Generics.Product (HasField, field)
 import qualified GHC.OverloadedLabels (IsLabel(..))

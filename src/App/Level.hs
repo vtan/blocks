@@ -10,6 +10,7 @@ import App.Rect (Rect(..))
 data Level = Level
   { blockById :: IntMap (Block Int) -- TODO store as a Vector or List instead?
   , bounds :: Rect Int
+  , collectorColumn :: Int
   }
   deriving (Show, Generic)
 
@@ -23,4 +24,11 @@ initial = Level
     , (4, Block 4 (Rect (V2 4 2) (V2 1 1)) (V2 1 0) Block.Movable)
     ]
   , bounds = Rect (V2 3 (-1)) (V2 6 4)
+  , collectorColumn = 4
   }
+
+collectorRect :: Level -> Rect Int
+collectorRect Level{ bounds, collectorColumn } =
+  bounds
+    & #xy . _x .~ collectorColumn
+    & #wh . _x .~ 1

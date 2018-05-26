@@ -3,6 +3,7 @@ module App.Editor where
 import App.Prelude
 
 import qualified App.Block as Block
+import qualified App.Level as Level
 import qualified App.Rect as Rect
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
@@ -20,6 +21,7 @@ data Editor = Editor
 data Selection
   = BlockSelection { blockId :: Int }
   | BoundsSelection
+  | CollectorColumnSelection
   | TileSelection { pos :: V2 Int }
   deriving (Show, Generic)
 
@@ -34,6 +36,7 @@ selectionRect Editor{ selection, level } =
   case selection of
     Just BlockSelection { blockId } -> level ^? #blockById . at blockId . _Just . #rect
     Just BoundsSelection -> Just $ level ^. #bounds
+    Just CollectorColumnSelection -> Just $ Level.collectorRect level
     Just TileSelection{ pos } -> Just $ Rect.fromMinSize pos 1
     Nothing -> Nothing
 
@@ -50,6 +53,10 @@ selectBounds :: Editor -> Editor
 selectBounds editor =
   editor & #selection .~ Just BoundsSelection
 
+selectCollectorColumn :: Editor -> Editor
+selectCollectorColumn editor =
+  editor & #selection .~ Just CollectorColumnSelection
+
 moveSelection :: V2 Int -> Editor -> Editor
 moveSelection dir editor@Editor{ selection } =
   case selection of
@@ -57,6 +64,8 @@ moveSelection dir editor@Editor{ selection } =
       editor & #level . #blockById . at blockId . _Just . #rect . #xy +~ dir
     Just BoundsSelection ->
       editor & #level . #bounds . #xy +~ dir
+    Just CollectorColumnSelection ->
+      editor & #level . #collectorColumn +~ dir ^. _x
     Just TileSelection{} -> editor
     Nothing -> editor
 
@@ -69,6 +78,7 @@ resizeSelection dir editor@Editor{ selection } =
     Just BoundsSelection ->
       editor & #level . #bounds . #wh %~ \wh ->
         max 1 <$> wh + dir
+    Just CollectorColumnSelection -> editor
     Just TileSelection{} -> editor
     Nothing -> editor
 
@@ -78,6 +88,7 @@ orientSelection dir editor@Editor{ selection } =
     Just BlockSelection{ blockId } ->
       editor & #level . #blockById . at blockId . _Just . #orientation .~ dir
     Just BoundsSelection -> editor
+    Just CollectorColumnSelection -> editor
     Just TileSelection{} -> editor
     Nothing -> editor
 
@@ -87,6 +98,7 @@ setSelectionBehavior behavior editor@Editor{ selection } =
     Just BlockSelection{ blockId } ->
       editor & #level . #blockById . at blockId . _Just . #behavior .~ behavior
     Just BoundsSelection -> editor
+    Just CollectorColumnSelection -> editor
     Just TileSelection{} -> editor
     Nothing -> editor
 
@@ -108,6 +120,7 @@ createBlock editor@Editor{ selection, level } =
         & #selection .~ Just BlockSelection{ blockId = uid }
     Just BlockSelection{} -> editor
     Just BoundsSelection{} -> editor
+    Just CollectorColumnSelection{} -> editor
     Nothing -> editor
 
 deleteSelection :: Editor -> Editor
@@ -116,5 +129,6 @@ deleteSelection editor@Editor{ selection } =
     Just BlockSelection{ blockId } ->
       editor & #level . #blockById . at blockId .~ Nothing
     Just BoundsSelection{} -> editor
+    Just CollectorColumnSelection -> editor
     Just TileSelection{} -> editor
     Nothing -> editor
