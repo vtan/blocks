@@ -22,6 +22,8 @@ import Control.Monad.Writer.CPS as X
   (WriterT)
 import Data.Generics.Product as X
   (field)
+import Data.Generics.Sum as X
+  (_Ctor)
 import Data.HashMap.Strict as X
   (HashMap)
 import Data.IntMap.Strict as X

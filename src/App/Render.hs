@@ -7,6 +7,7 @@ import App.Prelude
 import qualified App.Block as Block
 import qualified App.Camera as Camera
 import qualified App.Editor as Editor
+import qualified App.GameState as GameState
 import qualified App.Level as Level
 import qualified App.Rect as Rect
 import qualified Linear as Lin
@@ -29,7 +30,10 @@ render renderer gs = do
 
 renderGame :: SDL.Renderer -> GameState -> IO ()
 renderGame renderer gs = do
-  SDL.rendererDrawColor renderer $= V4 0 0 0 255
+  SDL.rendererDrawColor renderer $= 
+    if GameState.levelWon gs
+    then V4 127 107 0 255
+    else V4 0 0 0 255
   SDL.clear renderer
   let blocks = (staticBlocks <> animatedBlocks) gs
       camera = fromIntegral <$> view #camera gs
