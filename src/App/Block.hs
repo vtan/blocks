@@ -15,6 +15,7 @@ data Block a = Block
 data Behavior
   = Static
   | Pushable
+  | Collectable
   | Movable
   | Flippable { flipped :: Bool }
   deriving (Show, Generic)

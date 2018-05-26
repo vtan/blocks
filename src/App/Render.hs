@@ -84,6 +84,10 @@ renderBlocks renderer camera blocks =
         SDL.fillRect renderer $ Just scrCurrentMarkerRect
         SDL.rendererDrawColor renderer $= V4 255 0 0 255
         SDL.fillRect renderer $ Just scrOtherMarkerRect
+      Block.Collectable -> do
+        let centerRect = Rect.fromCenterRadius (Rect.center rect) 0.15
+        SDL.rendererDrawColor renderer $= V4 0 255 255 255
+        SDL.fillRect renderer . Just . drawnRect camera $ centerRect
       Block.Static -> pure ()
       Block.Pushable -> pure ()
 

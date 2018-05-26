@@ -130,7 +130,6 @@ handleEditorEvent editor gs = \case
 blockClicked :: Block Int -> GameState -> GameState
 blockClicked block@Block{ orientation, behavior } gs =
   case behavior of
-    Block.Static -> gs
     Block.Movable -> gs & moveBlock block orientation
     Block.Flippable flipped ->
       let blockId = view #uid block
@@ -139,6 +138,8 @@ blockClicked block@Block{ orientation, behavior } gs =
         & moveBlock block currentDir
         & set (#currentAnimation . _Just . #after . #blockById . at blockId . _Just . #behavior)
             (Block.Flippable $ not flipped)
+    Block.Static -> gs
+    Block.Collectable -> gs
     Block.Pushable -> gs
 
 moveBlock :: Block Int -> V2 Int -> GameState -> GameState
@@ -156,6 +157,7 @@ tryPush block dir gs =
     Block.Movable{} -> gs'
     Block.Flippable{} -> gs'
     Block.Pushable -> gs'
+    Block.Collectable -> gs'
   where
     gs'
       | Rect.containsRect (view (#currentLevel . #bounds) gs) movedRect =
@@ -202,4 +204,5 @@ scancodeToBehavior = \case
   SDL.ScancodeKP1 -> Just Block.Pushable
   SDL.ScancodeKP2 -> Just Block.Movable
   SDL.ScancodeKP3 -> Just $ Block.Flippable { Block.flipped = False} 
+  SDL.ScancodeKP4 -> Just Block.Collectable
   _ -> Nothing
