@@ -8,6 +8,7 @@ import Control.Applicative as X
 import Control.Arrow as X
 import Control.Lens.At as X
 import Control.Lens.Each as X
+import Control.Lens.Empty as X
 import Control.Lens.Getter as X
 import Control.Lens.Fold as X
 import Control.Lens.Operators as X

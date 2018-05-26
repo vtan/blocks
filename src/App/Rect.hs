@@ -11,6 +11,9 @@ data Rect a = Rect
   }
   deriving (Show, Generic, Functor)
 
+fromMinSize :: V2 a -> V2 a -> Rect a
+fromMinSize = Rect
+
 fromCenterRadius :: Num a => V2 a -> V2 a -> Rect a
 fromCenterRadius c r = Rect (c - r) (2 *^ r)
 

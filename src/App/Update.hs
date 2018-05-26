@@ -117,10 +117,14 @@ handleEditorEvent editor gs = \case
         gs & #editor . _Just %~ Editor.moveSelection dir
   KeyPressEvent (scancodeToBehavior -> Just behavior) ->
     gs & #editor . _Just %~ Editor.setSelectionBehavior behavior
+  KeyPressEvent SDL.ScancodeKPPlus ->
+    gs & #editor . _Just %~ Editor.createBlock
+  KeyPressEvent SDL.ScancodeKPMinus ->
+    gs & #editor . _Just %~ Editor.deleteSelection
   MouseReleaseEvent pos ->
     let camera = fromIntegral <$> view #camera gs
         pos' = Camera.screenToPoint @Int camera pos
-    in gs & #editor . _Just %~ Editor.selectBlockAt pos'
+    in gs & #editor . _Just %~ Editor.selectTileAt pos'
   _ -> gs
 
 blockClicked :: Block Int -> GameState -> GameState
