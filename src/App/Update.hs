@@ -94,16 +94,16 @@ handleGameEvent gs = \case
     gs
       & set #blockById (view (#currentLevel . #blockById) gs)
       & set #currentAnimation Nothing
+  KeyPressEvent SDL.ScancodeSpace | GameState.levelWon gs ->
+    GameState.changeLevel 1 gs
   _ -> gs
  
 handleEditorEvent :: Editor -> GameState -> SDL.Event -> GameState
 handleEditorEvent editor gs = \case
   KeyPressEvent SDL.ScancodeE ->
-    let level = editor ^. #level
-    in gs
+    gs
+      & GameState.applyEditorChanges editor
       & #editor .~ Nothing
-      & #currentLevel .~ level
-      & #blockById .~ (level ^. #blockById)
   KeyPressEvent SDL.ScancodeB ->
     gs & #editor . _Just %~ Editor.selectBounds
   KeyPressEvent SDL.ScancodeC ->
@@ -115,6 +115,13 @@ handleEditorEvent editor gs = \case
         gs & #editor . _Just %~ Editor.resizeSelection dir
       | SDL.keyModifierLeftCtrl keyMod || SDL.keyModifierRightCtrl keyMod ->
         gs & #editor . _Just %~ Editor.orientSelection dir
+      | SDL.keyModifierLeftAlt keyMod || SDL.keyModifierRightAlt keyMod ->
+        let ixDiff = dir ^. _x
+        in if abs ixDiff == 1
+        then gs
+          & GameState.applyEditorChanges editor
+          & GameState.changeLevel ixDiff
+        else gs
       | otherwise ->
         gs & #editor . _Just %~ Editor.moveSelection dir
   KeyPressEvent (scancodeToBehavior -> Just behavior) ->

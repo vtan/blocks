@@ -3,6 +3,7 @@ module App.Level where
 import App.Prelude
 
 import qualified App.Block as Block
+import qualified App.Rect as Rect
 
 import App.Block (Block(..))
 import App.Rect (Rect(..))
@@ -13,6 +14,13 @@ data Level = Level
   , collectorColumn :: Int
   }
   deriving (Show, Generic)
+
+empty :: Level
+empty = Level 
+  { blockById = mempty
+  , bounds = Rect.fromMinSize 0 5
+  , collectorColumn = 4
+  }
 
 initial :: Level
 initial = Level

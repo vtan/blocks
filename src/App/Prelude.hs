@@ -28,6 +28,8 @@ import Data.HashMap.Strict as X
   (HashMap)
 import Data.IntMap.Strict as X
   (IntMap)
+import Data.List.NonEmpty as X
+  (NonEmpty((:|)))
 import Data.Semigroup as X
   ((<>))
 import Debug.Trace as X

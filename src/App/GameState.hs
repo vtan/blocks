@@ -3,6 +3,7 @@ module App.GameState where
 import App.Prelude
 
 import qualified App.Camera as Camera
+import qualified App.Editor as Editor
 import qualified App.Level as Level
 import qualified App.Rect as Rect
 import qualified SDL
@@ -14,7 +15,9 @@ import App.Editor (Editor)
 import App.Level (Level)
 
 data GameState = GameState
-  { currentLevel :: Level
+  { levels :: NonEmpty Level
+  , currentLevel :: Level
+  , currentLevelIx :: Int
   , blockById :: IntMap (Block Int)
   , currentAnimation :: Maybe Animation
   , editor :: Maybe Editor
@@ -46,9 +49,30 @@ levelWon GameState{ blockById, currentLevel } =
     & filter (view #behavior >>> has (_Ctor @"Collectable"))
     & all (view #rect >>> Rect.intersects collectorRect)
 
+applyEditorChanges :: Editor -> GameState -> GameState
+applyEditorChanges editor gs@GameState { currentLevelIx } =
+  let changedLevel = editor ^. #level
+  in gs
+    & #levels . ix currentLevelIx .~ changedLevel
+    & #currentLevel .~ changedLevel
+    & #blockById .~ changedLevel ^. #blockById
+
+changeLevel :: Int -> GameState -> GameState
+changeLevel ixDiff gs@GameState{ levels, currentLevelIx } =
+  let nextIx = currentLevelIx + ixDiff
+  in case levels ^? ix nextIx of
+    Just nextLevel -> gs
+      & #currentLevel .~ nextLevel
+      & #currentLevelIx .~ nextIx
+      & #blockById .~ nextLevel ^. #blockById
+      & #editor . _Just .~ Editor.fromLevel nextLevel
+    Nothing -> gs
+
 initial :: GameState
 initial = GameState
-  { currentLevel = Level.initial
+  { levels = [Level.initial, Level.empty]
+  , currentLevel = Level.initial
+  , currentLevelIx = 0
   , blockById = view #blockById Level.initial
   , currentAnimation = Nothing
   , editor = Nothing
