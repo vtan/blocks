@@ -88,14 +88,14 @@ handleGameEvent gs = \case
         in maybe gs (flip blockClicked gs) clickBlock
   KeyPressEvent SDL.ScancodeE -> 
     gs 
-      & set #editor (Just . Editor.fromLevel $ view #currentLevel gs)
+      & set #editor (Just . Editor.fromLevel $ view (#levels . #current) gs)
       & set #currentAnimation Nothing
   KeyPressEvent SDL.ScancodeR ->
     gs
-      & set #blockById (view (#currentLevel . #blockById) gs)
+      & set #blockById (view (#levels . #current . #blockById) gs)
       & set #currentAnimation Nothing
   KeyPressEvent SDL.ScancodeSpace | GameState.levelWon gs ->
-    GameState.changeLevel 1 gs
+    GameState.goNextLevel gs
   _ -> gs
  
 handleEditorEvent :: Editor -> GameState -> SDL.Event -> GameState
@@ -114,12 +114,14 @@ handleEditorEvent editor gs@GameState{ keyModifier } = \case
     | SDL.keyModifierLeftCtrl keyModifier || SDL.keyModifierRightCtrl keyModifier ->
       gs & #editor . _Just %~ Editor.orientSelection dir
     | SDL.keyModifierLeftAlt keyModifier || SDL.keyModifierRightAlt keyModifier ->
-      let ixDiff = dir ^. _x
-      in if abs ixDiff == 1
-      then gs
-        & GameState.applyEditorChanges editor
-        & GameState.changeLevel ixDiff
-      else gs
+      case dir of
+        V2 1 0 -> gs
+          & GameState.applyEditorChanges editor
+          & GameState.goNextLevel
+        V2 (-1) 0 -> gs
+          & GameState.applyEditorChanges editor
+          & GameState.goPrevLevel
+        _ -> gs
     | otherwise ->
       gs & #editor . _Just %~ Editor.moveSelection dir
   KeyPressEvent (scancodeToBehavior -> Just behavior) ->
@@ -177,7 +179,7 @@ tryPush block dir gs =
     Block.Collectable -> gs'
   where
     gs'
-      | Rect.containsRect (view (#currentLevel . #bounds) gs) movedRect =
+      | Rect.containsRect (view (#levels . #current . #bounds) gs) movedRect =
         allBlocks
         & toList
         & filter (not . Block.eqUid block)

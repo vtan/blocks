@@ -37,10 +37,10 @@ renderGame renderer gs = do
   SDL.clear renderer
   let blocks = (staticBlocks <> animatedBlocks) gs
       camera = fromIntegral <$> view #camera gs
-  gs ^. #currentLevel & renderLevelBg renderer camera
+  gs ^. #levels . #current & renderLevelBg renderer camera
   renderBlocks renderer camera blocks
   SDL.rendererDrawColor renderer $= V4 191 191 191 255
-  let levelBounds = view (#currentLevel . #bounds) gs
+  let levelBounds = view (#levels . #current . #bounds) gs
   SDL.drawRect renderer . Just . drawnRect' camera $ levelBounds
 
 renderEditor :: SDL.Renderer -> Editor -> GameState -> IO ()

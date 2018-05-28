@@ -5,8 +5,8 @@ import App.Prelude
 import qualified App.Camera as Camera
 import qualified App.Editor as Editor
 import qualified App.Level as Level
+import qualified App.NonEmptyZipper as NonEmptyZipper
 import qualified App.Rect as Rect
-import qualified Data.List.NonEmpty as NonEmpty
 import qualified SDL
 import qualified SDL.Internal.Numbered
 
@@ -14,11 +14,10 @@ import App.Block (Block(..))
 import App.Camera (Camera)
 import App.Editor (Editor)
 import App.Level (Level)
+import App.NonEmptyZipper (NonEmptyZipper(..))
 
 data GameState = GameState
-  { levels :: NonEmpty Level
-  , currentLevel :: Level
-  , currentLevelIx :: Int
+  { levels :: NonEmptyZipper Level
   , blockById :: IntMap (Block Int)
   , currentAnimation :: Maybe Animation
   , editor :: Maybe Editor
@@ -43,8 +42,8 @@ findBlockAt GameState{ blockById = blocks } p =
   blocks & find (\b -> Rect.contains (view #rect b) p)
 
 levelWon :: GameState -> Bool
-levelWon GameState{ blockById, currentLevel } =
-  let collectorRect = Level.collectorRect currentLevel
+levelWon GameState{ blockById, levels } =
+  let collectorRect = levels ^. #current & Level.collectorRect 
   in blockById
     & toList
     & filter (view #behavior >>> has (_Ctor @"Collectable"))
@@ -54,66 +53,51 @@ levelWon GameState{ blockById, currentLevel } =
 -- currentLevel of the GameState instead of having a redundant level which needs to be applied
 -- at various events?
 applyEditorChanges :: Editor -> GameState -> GameState
-applyEditorChanges editor gs@GameState { currentLevelIx } =
+applyEditorChanges editor gs =
   let changedLevel = editor ^. #level
   in gs
-    & #levels . ix currentLevelIx .~ changedLevel
-    & #currentLevel .~ changedLevel
+    & #levels . #current .~ changedLevel
     & #blockById .~ changedLevel ^. #blockById
 
-changeLevel :: Int -> GameState -> GameState
-changeLevel ixDiff gs@GameState{ levels, currentLevelIx } =
-  let nextIx = currentLevelIx + ixDiff
-  in case levels ^? ix nextIx of
-    Just nextLevel -> gs
-      & #currentLevel .~ nextLevel
-      & #currentLevelIx .~ nextIx
-      & #blockById .~ nextLevel ^. #blockById
-      & #editor . _Just .~ Editor.fromLevel nextLevel
+goNextLevel :: GameState -> GameState
+goNextLevel gs@GameState{ levels } =
+  case NonEmptyZipper.next levels of
+    Just levels' -> gs
+      & #levels .~ levels'
+      & #blockById .~ levels' ^. #current . #blockById
+      & #editor . _Just .~ Editor.fromLevel (levels' ^. #current)
+    Nothing -> gs
+
+goPrevLevel :: GameState -> GameState
+goPrevLevel gs@GameState{ levels } =
+  case NonEmptyZipper.prev levels of
+    Just levels' -> gs
+      & #levels .~ levels'
+      & #blockById .~ levels' ^. #current . #blockById
+      & #editor . _Just .~ Editor.fromLevel (levels' ^. #current)
     Nothing -> gs
 
 addLevel :: GameState -> GameState
-addLevel gs@GameState{ levels, currentLevelIx } =
+addLevel gs@GameState{ levels } =
   let newLevel = Level.empty
-      newIx = currentLevelIx + 1
-      (levelsBeforeNew, levelsAfterNew) = NonEmpty.splitAt newIx levels
-      levels' = case NonEmpty.nonEmpty (levelsBeforeNew ++ [newLevel] ++ levelsAfterNew) of
-        Just ne -> ne
-        Nothing -> newLevel :| []
+      levels' = NonEmptyZipper.pushAfter newLevel levels
   in gs
     & #levels .~ levels'
-    & #currentLevel .~ newLevel
-    & #currentLevelIx .~ newIx
     & #blockById .~ newLevel ^. #blockById
     & #editor . _Just .~ Editor.fromLevel newLevel
 
 removeLevel :: GameState -> GameState
-removeLevel gs@GameState{ levels, currentLevelIx } =
-  let (levelsBefore, levelsAfter) = NonEmpty.splitAt currentLevelIx levels
-      levels' = case NonEmpty.nonEmpty (levelsBefore ++ drop 1 levelsAfter) of
-        Just ne -> ne
-        Nothing -> Level.empty :| []
-      (currentLevel', currentLevelIx')
-        | currentLevelIx == 0 = (NonEmpty.head levels', 0)
-        | otherwise = 
-            ( NonEmpty.nonEmpty levelsBefore
-                & fmap NonEmpty.last
-                & fromMaybe Level.empty
-            , currentLevelIx - 1
-            )
+removeLevel gs@GameState{ levels } =
+  let levels' = (NonEmptyZipper.shiftFromBefore levels <|> NonEmptyZipper.shiftFromAfter levels)
+        & fromMaybe (NonEmptyZipper.singleton Level.empty)
   in gs
     & #levels .~ levels'
-    & #currentLevel .~ currentLevel'
-    & #currentLevelIx .~ currentLevelIx'
-    & #blockById .~ currentLevel' ^. #blockById
-    & #editor . _Just .~ Editor.fromLevel currentLevel'
--- TODO use a `Lens' GameState ([Level], NonEmptyLevel)` to reduce invariant maintenance boilerplate?
+    & #blockById .~ levels' ^. #current . #blockById
+    & #editor . _Just .~ Editor.fromLevel (levels' ^. #current)
 
 initial :: GameState
 initial = GameState
-  { levels = [Level.initial, Level.empty]
-  , currentLevel = Level.initial
-  , currentLevelIx = 0
+  { levels = NonEmptyZipper.fromNonEmpty [Level.initial, Level.empty]
   , blockById = view #blockById Level.initial
   , currentAnimation = Nothing
   , editor = Nothing
