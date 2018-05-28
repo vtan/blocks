@@ -15,7 +15,7 @@ import qualified SDL as SDL
 
 import App.Block (Block(..))
 import App.Editor (Editor)
-import App.GameState (GameState)
+import App.GameState (GameState(..))
 
 pattern QuitEvent :: SDL.Event
 pattern QuitEvent <-
@@ -99,7 +99,7 @@ handleGameEvent gs = \case
   _ -> gs
  
 handleEditorEvent :: Editor -> GameState -> SDL.Event -> GameState
-handleEditorEvent editor gs = \case
+handleEditorEvent editor gs@GameState{ keyModifier } = \case
   KeyPressEvent SDL.ScancodeE ->
     gs
       & GameState.applyEditorChanges editor
@@ -108,28 +108,36 @@ handleEditorEvent editor gs = \case
     gs & #editor . _Just %~ Editor.selectBounds
   KeyPressEvent SDL.ScancodeC ->
     gs & #editor . _Just %~ Editor.selectCollectorColumn
-  KeyPressEvent (scancodeToDir -> Just dir) ->
-    let keyMod = gs ^. #keyModifier
-    in if
-      | SDL.keyModifierLeftShift keyMod || SDL.keyModifierRightShift keyMod ->
-        gs & #editor . _Just %~ Editor.resizeSelection dir
-      | SDL.keyModifierLeftCtrl keyMod || SDL.keyModifierRightCtrl keyMod ->
-        gs & #editor . _Just %~ Editor.orientSelection dir
-      | SDL.keyModifierLeftAlt keyMod || SDL.keyModifierRightAlt keyMod ->
-        let ixDiff = dir ^. _x
-        in if abs ixDiff == 1
-        then gs
-          & GameState.applyEditorChanges editor
-          & GameState.changeLevel ixDiff
-        else gs
-      | otherwise ->
-        gs & #editor . _Just %~ Editor.moveSelection dir
+  KeyPressEvent (scancodeToDir -> Just dir) -> if
+    | SDL.keyModifierLeftShift keyModifier || SDL.keyModifierRightShift keyModifier ->
+      gs & #editor . _Just %~ Editor.resizeSelection dir
+    | SDL.keyModifierLeftCtrl keyModifier || SDL.keyModifierRightCtrl keyModifier ->
+      gs & #editor . _Just %~ Editor.orientSelection dir
+    | SDL.keyModifierLeftAlt keyModifier || SDL.keyModifierRightAlt keyModifier ->
+      let ixDiff = dir ^. _x
+      in if abs ixDiff == 1
+      then gs
+        & GameState.applyEditorChanges editor
+        & GameState.changeLevel ixDiff
+      else gs
+    | otherwise ->
+      gs & #editor . _Just %~ Editor.moveSelection dir
   KeyPressEvent (scancodeToBehavior -> Just behavior) ->
     gs & #editor . _Just %~ Editor.setSelectionBehavior behavior
-  KeyPressEvent SDL.ScancodeKPPlus ->
-    gs & #editor . _Just %~ Editor.createBlock
-  KeyPressEvent SDL.ScancodeKPMinus ->
-    gs & #editor . _Just %~ Editor.deleteSelection
+  KeyPressEvent SDL.ScancodeKPPlus -> if
+    | SDL.keyModifierLeftAlt keyModifier || SDL.keyModifierRightAlt keyModifier ->
+      gs
+        & GameState.applyEditorChanges editor
+        & GameState.addLevel
+    | otherwise ->
+      gs & #editor . _Just %~ Editor.createBlock
+  KeyPressEvent SDL.ScancodeKPMinus -> if
+    | SDL.keyModifierLeftAlt keyModifier || SDL.keyModifierRightAlt keyModifier ->
+      gs
+        & GameState.applyEditorChanges editor
+        & GameState.removeLevel
+    | otherwise ->
+      gs & #editor . _Just %~ Editor.deleteSelection
   MouseReleaseEvent pos ->
     let camera = fromIntegral <$> view #camera gs
         pos' = Camera.screenToPoint @Int camera pos
