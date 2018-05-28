@@ -127,7 +127,9 @@ deleteSelection :: Editor -> Editor
 deleteSelection editor@Editor{ selection } =
   case selection of
     Just BlockSelection{ blockId } ->
-      editor & #level . #blockById . at blockId .~ Nothing
+      editor 
+        & #level . #blockById . at blockId .~ Nothing
+        & #selection .~ Nothing
     Just BoundsSelection{} -> editor
     Just CollectorColumnSelection -> editor
     Just TileSelection{} -> editor
