@@ -7,7 +7,7 @@ maintainer:          "Viktor Tanyi <tanyi.viktor@gmail.com>"
 copyright:           "2018 Viktor Tanyi"
 
 extra-source-files:
-  #- README.md
+  - README.md
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package
